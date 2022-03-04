@@ -1,7 +1,8 @@
+from numpy import append
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.helpers import Helper
-
+from ckan.model import PackageTag
 
 class AutoTagPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -19,28 +20,39 @@ class AutoTagPlugin(plugins.SingletonPlugin):
      # IResourceController
 
     def after_create(self, context, resource):
+        dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
         if resource['url_type'] == 'upload':
             try:
                 dataframe_columns = []
                 xls_dataframes_columns = {}
-                if Helper.is_csv(res):                        
+                tags = []
+                if Helper.is_csv(resource):
                     dataframe_columns = Helper.get_csv_columns(resource['id'])
                     for col in dataframe_columns:
-                        if col not in pkg_dict['tags']:
-                            pkg_dict['tags'].append(col)
+                        if 'tags' in dataset.keys() and col not in dataset['tags']:
+                            tag_dict = {'name': col}
+                            dataset['tags'].append(tag_dict)
                     
-                elif Helper.is_xlsx(res):
+                    toolkit.get_action('package_update')({}, dataset)
+                    return resource
+                    
+                elif Helper.is_xlsx(resource):
                     xls_dataframes_columns = Helper.get_xlsx_columns(resource['id'])
                     for sheet, columns in xls_dataframes_columns.items():
                         for col in columns:
-                            if col not in pkg_dict['tags']:
-                                pkg_dict['tags'].append(col)
+                            if 'tags' in dataset.keys() and col not in dataset['tags']:
+                                tag_dict = {'name': col}
+                                dataset['tags'].append(tag_dict)
+
+                    toolkit.get_action('package_update')({}, dataset)
+                    return resource
+                        
                 else:
-                    continue
+                    return resource
             
             except:
-                # continue
-                raise
+                return resource
+                # raise
   
         return resource
 
