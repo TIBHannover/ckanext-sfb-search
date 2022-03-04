@@ -39,29 +39,15 @@ class AutoTagPlugin(plugins.SingletonPlugin):
             
             if len(dataframe) != 0:
                 # resource is csv
-                if not Helper.is_possible_to_automate(dataframe):
-                    return resource
                 
-                resource['material_combination'] = Helper.get_metadata_value(dataframe, 'Werkstoff-1') + ', ' + Helper.get_metadata_value(dataframe, 'Werkstoff-2')
-                resource['atmosphere'] = Helper.get_metadata_value(dataframe, 'Atmosphaere')
-                resource['data_type'] = Helper.get_metadata_value(dataframe, 'Datentyp')
-                resource['surface_preparation'] = Helper.get_metadata_value(dataframe, 'Vorbehandlung')
-                resource['is_automated_processed'] = True
+
+
+
                 return resource
             
             if len(xls_dataframes.keys()) != 0:
                 # resource is xlsx
-                for sheet, sheet_dataframe in xls_dataframes.items():
-                    if not Helper.is_possible_to_automate(sheet_dataframe):
-                        print(sheet_dataframe)
-                        continue
-
-                    resource['material_combination'] = Helper.get_metadata_value(sheet_dataframe, 'Werkstoff-1') + ', ' + Helper.get_metadata_value(sheet_dataframe, 'Werkstoff-2')
-                    resource['atmosphere'] = Helper.get_metadata_value(sheet_dataframe, 'Atmosphaere')
-                    resource['data_type'] = Helper.get_metadata_value(sheet_dataframe, 'Datentyp')
-                    resource['surface_preparation'] = Helper.get_metadata_value(sheet_dataframe, 'Vorbehandlung')
-                    resource['is_automated_processed'] = True
-                    return resource
+                return resource
   
         return resource
 
