@@ -1,0 +1,4 @@
+include README.rst
+include LICENSE
+include requirements.txt
+recursive-include ckanext/sfb_search_extension *.html *.json *.js *.less *.css *.mo
