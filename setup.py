@@ -84,7 +84,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points='''
         [ckan.plugins]
-        sfb_search_extension=ckanext.sfb_search_extension.plugin:SfbSearchExtensionPlugin
+        auto_tag=ckanext.sfb_search_extension.plugin:AutoTagPlugin
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
