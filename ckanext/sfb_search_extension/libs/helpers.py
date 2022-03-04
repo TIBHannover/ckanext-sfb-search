@@ -12,6 +12,16 @@ STANDARD_HEADERS = ['X-Kategorie', 'Y-Kategorie', 'Datentyp', 'Werkstoff-1', 'We
 
 class Helper():
 
+    @staticmethod
+    def is_possible_to_automate(resource_df):
+        df_columns = resource_df.columns
+        if len(df_columns) != len(STANDARD_HEADERS):
+            return False
+        for header in df_columns:
+            if header.strip() not in STANDARD_HEADERS:
+                return False
+        return True
+
    
     @staticmethod
     def get_csv_columns(resource_id):
@@ -27,9 +37,12 @@ class Helper():
 
         file_path = RESOURCE_DIR + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
         df = clevercsv.read_dataframe(file_path)
-        df = df.fillna(0)
-
-        return list(df.columns)
+        df = df.fillna(0)        
+        if not Helper.is_possible_to_automate(df):
+            return list(df.columns)
+        else:
+            # skip the first row to get the actual columns names
+            return list(df.iloc[0])
 
 
 
@@ -53,7 +66,10 @@ class Helper():
             if len(temp_df) > 0:
                 headers = temp_df.iloc[0]
                 final_data_df  = pd.DataFrame(temp_df.values[1:], columns=headers)
-                result_df[sheet] = final_data_df
+                if not Helper.is_possible_to_automate(final_data_df):
+                    result_df[sheet] = final_data_df
+                else:
+                    result_df[sheet] = list(final_data_df.iloc[0])                
 
         return result_df
     
