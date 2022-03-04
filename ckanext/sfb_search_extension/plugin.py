@@ -19,17 +19,17 @@ class AutoTagPlugin(plugins.SingletonPlugin):
 
     def after_create(self, context, resource):
         if resource['url_type'] == 'upload':
-            dataframe = []
-            xls_dataframes = {}
+            dataframe_columns = []
+            xls_dataframes_columns = {}
             if Helper.is_csv(resource):
                 try:
-                    dataframe = Helper.csv_to_dataframe(resource['id'])
+                    dataframe_columns = Helper.get_csv_columns(resource['id'])
                 except:
                     return resource
 
             elif Helper.is_xlsx(resource):
                 try:
-                    xls_dataframes = Helper.xlsx_to_dataframe(resource['id'])
+                    xls_dataframes_columns = Helper.get_xlsx_columns(resource['id'])
                 except:
                     # return resource
                     raise
@@ -37,15 +37,16 @@ class AutoTagPlugin(plugins.SingletonPlugin):
             else:
                 return resource
             
-            if len(dataframe) != 0:
+            if len(dataframe_columns) != 0:
                 # resource is csv
                 
 
 
 
+
                 return resource
             
-            if len(xls_dataframes.keys()) != 0:
+            if len(xls_dataframes_columns.keys()) != 0:
                 # resource is xlsx
                 return resource
   

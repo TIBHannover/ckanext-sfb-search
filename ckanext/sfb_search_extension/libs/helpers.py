@@ -12,45 +12,17 @@ STANDARD_HEADERS = ['X-Kategorie', 'Y-Kategorie', 'Datentyp', 'Werkstoff-1', 'We
 
 class Helper():
 
-    def is_plugin_enabled(plugin_name):
-        plugins = toolkit.config.get("ckan.plugins")
-        if plugin_name in plugins:
-            return True
-        return False
-    
-
+   
     @staticmethod
-    def is_possible_to_automate(resource_df):
-        df_columns = resource_df.columns
-        if len(df_columns) != len(STANDARD_HEADERS):
-            return False
-        for header in df_columns:
-            if header.strip() not in STANDARD_HEADERS:
-                return False
-        return True
-
-    
-    @staticmethod
-    def get_metadata_value(dataframe, column_title):
-        if len(list(dataframe[column_title])) < 1:
-            return ''
-        
-        return list(dataframe[column_title])[0]
-
-
-
-    
-
-    @staticmethod
-    def csv_to_dataframe(resource_id):
+    def get_csv_columns(resource_id):
         '''
-            Read a csv file as pandas dataframe.
+            Read a csv file as pandas dataframe and return the columns name.
 
             Args:
                 - resource_id: the data resource id in ckan
             
             Returns:
-                - a python dataframe
+                - a list of columns names
         '''
 
         file_path = RESOURCE_DIR + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
@@ -61,15 +33,15 @@ class Helper():
 
 
     @staticmethod
-    def xlsx_to_dataframe(resource_id):
+    def get_xlsx_columns(resource_id):
         '''
-            Read a xlsx file as pandas dataframe.
+            Read a xlsx file as pandas dataframe and return the columns name.
 
             Args:
                 - resource_id: the data resource id in ckan
             
             Returns:
-                - a dictionary where key is the sheet name and value is a dataframe
+                - a list of columns names
         '''
 
         result_df = {}
