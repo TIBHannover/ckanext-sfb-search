@@ -19,42 +19,32 @@ class AutoTagPlugin(plugins.SingletonPlugin):
 
 
     def after_create(self, context, pkg_dict):
-        if resource['url_type'] == 'upload':
-            dataframe_columns = []
-            xls_dataframes_columns = {}
-            if Helper.is_csv(resource):
+        for res in pkg_dict['resources']:
+            if res['url_type'] == 'upload':
                 try:
-                    dataframe_columns = Helper.get_csv_columns(resource['id'])
-                except:
-                    return pkg_dict
-
-            elif Helper.is_xlsx(resource):
-                try:
-                    xls_dataframes_columns = Helper.get_xlsx_columns(resource['id'])
-                except:
-                    # return pkg_dict
-                    raise
-
-            else:
-                return pkg_dict
-            
-            if len(dataframe_columns) != 0:
-                # resource is csv
+                    dataframe_columns = []
+                    xls_dataframes_columns = {}
+                    if Helper.is_csv(res):                        
+                        dataframe_columns = Helper.get_csv_columns(res['id'])
+                        for col in dataframe_columns:
+                            if col not in pkg_dict['tags']:
+                                pkg_dict['tags'].append(col)
+                        
+                    elif Helper.is_xlsx(res):
+                        xls_dataframes_columns = Helper.get_xlsx_columns(res['id'])
+                        for sheet, columns in xls_dataframes_columns.items():
+                            for col in columns:
+                                if col not in pkg_dict['tags']:
+                                    pkg_dict['tags'].append(col)
+                    else:
+                        continue
                 
-
-
-
-
-                return pkg_dict
-            
-            if len(xls_dataframes_columns.keys()) != 0:
-                # resource is xlsx
-                return pkg_dict
+                except:
+                    # continue
+                    raise
   
         return pkg_dict
 
-
-    
 
     def read(self, entity):
         return entity
