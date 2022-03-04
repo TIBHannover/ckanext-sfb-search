@@ -5,7 +5,7 @@ from ckanext.sfb_search_extension.libs.helpers import Helper
 
 class AutoTagPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.IResourceController)
+    plugins.implements(plugins.IPackageController)
 
     # IConfigurer
 
@@ -15,9 +15,10 @@ class AutoTagPlugin(plugins.SingletonPlugin):
         
 
     
-    # IResourceController
+    # IPackageController
 
-    def after_create(self, context, resource):
+
+    def after_create(self, context, pkg_dict):
         if resource['url_type'] == 'upload':
             dataframe_columns = []
             xls_dataframes_columns = {}
@@ -25,17 +26,17 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                 try:
                     dataframe_columns = Helper.get_csv_columns(resource['id'])
                 except:
-                    return resource
+                    return pkg_dict
 
             elif Helper.is_xlsx(resource):
                 try:
                     xls_dataframes_columns = Helper.get_xlsx_columns(resource['id'])
                 except:
-                    # return resource
+                    # return pkg_dict
                     raise
 
             else:
-                return resource
+                return pkg_dict
             
             if len(dataframe_columns) != 0:
                 # resource is csv
@@ -44,30 +45,48 @@ class AutoTagPlugin(plugins.SingletonPlugin):
 
 
 
-                return resource
+                return pkg_dict
             
             if len(xls_dataframes_columns.keys()) != 0:
                 # resource is xlsx
-                return resource
+                return pkg_dict
   
-        return resource
+        return pkg_dict
 
 
     
-    def before_create(self, context, resource):
-        return resource
 
-    def before_update(self, context, current, resource):
-        return resource
+    def read(self, entity):
+        return entity
+
+    def create(self, entity):
+        return entity
     
-    def after_update(self, context, resource):
-        return resource
+    def edit(self, entity):
+        return entity
+    def delete(self, entity):
+        return entity
     
-    def before_delete(self, context, resource, resources):
-        return resources
+    def after_update(self, context, pkg_dict):
+        return pkg_dict
     
-    def after_delete(self, context, resources):
-        return resources
+    def after_delete(self, context, pkg_dict):
+        return pkg_dict
     
     def before_show(self, resource_dict):
         return resource_dict
+
+    def after_show(self, pkg_dict):
+        return pkg_dict
+    
+    def before_search(self, search_params):
+        return search_params
+    
+    def after_search(self, search_results, search_params):
+        return search_results
+    
+    def before_index(self, pkg_dict):
+        return pkg_dict
+    
+    def before_view(self, pkg_dict):
+        return pkg_dict

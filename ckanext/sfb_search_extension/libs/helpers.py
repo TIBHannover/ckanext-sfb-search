@@ -29,7 +29,8 @@ class Helper():
         df = clevercsv.read_dataframe(file_path)
         df = df.fillna(0)
 
-        return df
+        return list(df.columns)
+
 
 
     @staticmethod
