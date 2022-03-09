@@ -18,38 +18,45 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
     # IPackageController
 
-    def read(self, entity):
-        pass
+    def after_search(self, search_results, search_params):
+        if 'column:' not in search_params['q']:
+            return search_results
+        
+       
 
-    def create(self, entity):
-        pass
 
-    def edit(self, entity):
-        pass
+        return search_results
 
-    def delete(self, entity):
-        pass
-
-    def after_create(self, context, pkg_dict):
-        pass
-
-    def after_update(self, context, pkg_dict):
-        pass
 
     def after_delete(self, context, pkg_dict):
-        pass
+        return pkg_dict
+
+    def read(self, entity):
+        return entity
+
+    def create(self, entity):
+        return entity
+
+    def edit(self, entity):
+        return entity
+
+    def delete(self, entity):
+        return entity
+
+    def after_create(self, context, pkg_dict):
+        return pkg_dict
+
+    def after_update(self, context, pkg_dict):
+        return pkg_dict
 
     def after_show(self, context, pkg_dict):
-        pass
+        return pkg_dict
 
     def before_search(self, search_params):
-        pass
-
-    def after_search(self, search_results, search_params):
-        pass
+        return search_params
 
     def before_index(self, pkg_dict):
-        pass
+        return pkg_dict
 
     def before_view(self, pkg_dict):
-        pass 
+        return pkg_dict
