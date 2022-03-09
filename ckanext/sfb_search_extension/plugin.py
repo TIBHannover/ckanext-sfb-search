@@ -2,7 +2,7 @@ from numpy import append
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.helpers import Helper
-from ckan.model import PackageTag
+
 
 class AutoTagPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -51,8 +51,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     return resource
             
             except:
-                return resource
-                # raise
+                # return resource
+                raise
   
         return resource
 

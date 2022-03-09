@@ -85,6 +85,7 @@ setup(
     entry_points='''
         [ckan.plugins]
         auto_tag=ckanext.sfb_search_extension.plugin:AutoTagPlugin
+        resource_column_search=ckanext.sfb_search_extension.plugin2:ResourceColumnSearchPlugin
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
