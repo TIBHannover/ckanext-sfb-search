@@ -35,6 +35,13 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
         for package in all_datasets:
             if package.state != 'active':
                 continue
+            
+            context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
+            data_dict = {'id':package.id}
+            try:
+                toolkit.check_access('package_show', context, data_dict)
+            except toolkit.NotAuthorized:
+                continue
 
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             for res in dataset['resources']:
