@@ -119,3 +119,27 @@ class Helper():
             name = resource.name
         
         return (format in ['XLSX']) or ('.xlsx' in name)
+    
+
+
+    @staticmethod
+    def update_search_facet(search_facet_object, dataset, facet_name):
+
+        place = 0
+        exist = False
+        for item in search_facet_object[facet_name]['items']:
+            if dataset[facet_name]['name'] in item.values():
+                search_facet_object[facet_name]['items'][place]['count'] += 1
+                exist = True
+                break
+            place += 1
+        
+        if not exist:
+            search_facet_object[facet_name]['items'].append({
+                'name': dataset[facet_name]['name'], 
+                'display_name': dataset[facet_name]['title'], 
+                'count': 1
+                }) 
+
+
+        return search_facet_object
