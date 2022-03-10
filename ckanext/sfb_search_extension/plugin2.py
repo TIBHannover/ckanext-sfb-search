@@ -21,7 +21,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         if 'column:' not in search_params['q']:
-            # print(search_params['fq'])
+            # print(search_results['facets'])
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
@@ -31,7 +31,8 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = [] 
-        search_results['count'] = 0 
+        search_results['count'] = 0
+        print(search_results['facets']) 
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
         for package in all_datasets:
