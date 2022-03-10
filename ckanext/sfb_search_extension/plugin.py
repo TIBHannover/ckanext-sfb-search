@@ -51,8 +51,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     return resource
             
             except:
-                # return resource
-                raise
+                return resource
+                # raise
   
         return resource
 

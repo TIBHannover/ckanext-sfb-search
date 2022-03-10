@@ -21,6 +21,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         if 'column:' not in search_params['q']:
+            # print(search_params['fq'])
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
@@ -31,6 +32,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = [] 
         search_results['count'] = 0 
+        search_filters = search_params['fq']
         all_datasets = Package.search_by_name('')
         for package in all_datasets:
             if package.state != 'active':
@@ -52,10 +54,10 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                         csv_columns = Helper.get_csv_columns(res['id']) 
                     except:
                         csv_columns = []
-                                       
+
                     for col_name in csv_columns:
                         if search_phrase in col_name.strip().lower():                            
-                            search_results['results'].append(dataset)
+                            search_results['results'] = Helper.add_search_result(dataset, search_filters, search_results['results'])
                             search_results['count'] = int(search_results['count']) + 1 
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
@@ -78,7 +80,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                     for sheet, columns in xlsx_sheet.items():
                         for col_name in columns:
                             if search_phrase in col_name.strip().lower():
-                                search_results['results'].append(dataset)
+                                search_results['results'] = Helper.add_search_result(dataset, search_filters, search_results['results'])
                                 detected = True
                                 break
                         

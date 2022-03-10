@@ -121,6 +121,23 @@ class Helper():
         return (format in ['XLSX']) or ('.xlsx' in name)
     
 
+    @staticmethod
+    def add_search_result(dataset, search_filters_string, search_results):
+        '''
+            Add a dataset to search result based on the search filter.
+
+            Args:
+                - dataset: target dataset
+                - search_filters_string: ckan facet filter string. exist in search_params['fq]
+                - search_result: search result array
+        '''
+
+
+        search_results['results'].append(dataset)
+        return search_results
+
+
+
 
     @staticmethod
     def update_search_facet(search_facet_object, dataset, facet_name):
@@ -202,3 +219,5 @@ class Helper():
 
 
         return search_facet_object
+
+
