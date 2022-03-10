@@ -133,12 +133,12 @@ class Helper():
         '''
 
         org_filter = Helper.apply_filters_organization(dataset, search_filters_string)
-        tag_filter = True
+        tag_filter = Helper.apply_filters_tags(dataset, search_filters_string)
         group_filter = True
         type_filter = Helper.apply_filters_type(dataset, search_filters_string)
 
 
-        if org_filter and type_filter:
+        if org_filter and type_filter and tag_filter:
             search_results['results'].append(dataset)
             search_results['count'] = int(search_results['count']) + 1 
     
@@ -199,6 +199,39 @@ class Helper():
             return True
         
         return True
+    
+
+
+    @staticmethod
+    def apply_filters_tags(dataset, search_filters_string):
+        '''
+            Apply tags facet filters for a dataset.
+
+            Args:
+                - dataset: target dataset
+                - search_filters_string: ckan facet filter string. exist in search_params['fq']
+
+            Return:
+                - Boolean
+        '''
+
+        if 'tags:' not in search_filters_string:
+            return True
+        
+        for tag in dataset['tags']:
+            tag_query = 'tags:"' + tag['name'] + '"'
+            if tag_query in search_filters_string:
+                search_filters_string = search_filters_string.replace(tag_query, ' ')
+        
+        if 'tags:' in search_filters_string:
+            return False
+
+        return True 
+
+
+
+
+
 
 
 
