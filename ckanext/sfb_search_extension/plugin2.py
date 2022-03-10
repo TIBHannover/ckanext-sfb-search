@@ -21,7 +21,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         if 'column:' not in search_params['q']:
-            # print(search_results['search_facets'])
+            print(search_results['search_facets'])
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
@@ -57,6 +57,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                             search_results['results'].append(dataset)
                             search_results['count'] = int(search_results['count']) + 1 
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
+                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
                             break
                 
                 elif Helper.is_xlsx(res):
@@ -75,7 +76,8 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                 else:
                     continue
        
-        print(search_results)
+        # print(search_params)
+        
         return search_results
 
 

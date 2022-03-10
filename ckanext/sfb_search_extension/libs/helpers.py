@@ -124,22 +124,45 @@ class Helper():
 
     @staticmethod
     def update_search_facet(search_facet_object, dataset, facet_name):
+        '''
+            Update the search facet based on the search results.
+        '''
 
-        place = 0
-        exist = False
-        for item in search_facet_object[facet_name]['items']:
-            if dataset[facet_name]['name'] in item.values():
-                search_facet_object[facet_name]['items'][place]['count'] += 1
-                exist = True
-                break
-            place += 1
+        if facet_name == 'organization':
+            place = 0
+            exist = False
+            for item in search_facet_object[facet_name]['items']:
+                if dataset[facet_name]['name'] in item.values():
+                    search_facet_object[facet_name]['items'][place]['count'] += 1
+                    exist = True
+                    break
+                place += 1
+            
+            if not exist:
+                search_facet_object[facet_name]['items'].append({
+                    'name': dataset['organization']['name'], 
+                    'display_name': dataset['organization']['title'], 
+                    'count': 1
+                    }) 
         
-        if not exist:
-            search_facet_object[facet_name]['items'].append({
-                'name': dataset[facet_name]['name'], 
-                'display_name': dataset[facet_name]['title'], 
-                'count': 1
-                }) 
+
+        elif facet_name == 'tags':
+            for tag in dataset['tags']:
+                place = 0
+                exist = False
+                for item in search_facet_object[facet_name]['items']:
+                    if tag['name'] in item.values():
+                        search_facet_object[facet_name]['items'][place]['count'] += 1
+                        exist = True
+                        break
+                    place += 1
+                
+                if not exist:
+                    search_facet_object[facet_name]['items'].append({
+                        'name': tag['name'], 
+                        'display_name': tag['display_name'], 
+                        'count': 1
+                        }) 
 
 
         return search_facet_object
