@@ -132,8 +132,27 @@ class Helper():
                 - search_result: search result array
         '''
 
+        if 'organization:' in search_filters_string:
+            # print(search_filters_string)
+            # print(dataset['organization']['name'])
+            search_filters = search_filters_string.split(' ') 
+            for filter in search_filters:
+                if 'organization:' not in filter:
+                    continue
+                org_name = filter.split(':')[1].strip()
+                # print(org_name)
+                if '"' + dataset['organization']['name'] + '"' == org_name:
+                     search_results['results'].append(dataset)
+                     search_results['count'] = int(search_results['count']) + 1 
+                     break
+        
 
-        search_results['results'].append(dataset)
+        else:
+            search_results['results'].append(dataset)
+            search_results['count'] = int(search_results['count']) + 1 
+
+
+    
         return search_results
 
 

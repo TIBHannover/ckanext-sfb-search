@@ -32,7 +32,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = [] 
         search_results['count'] = 0 
-        search_filters = search_params['fq']
+        search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
         for package in all_datasets:
             if package.state != 'active':
@@ -57,8 +57,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
                     for col_name in csv_columns:
                         if search_phrase in col_name.strip().lower():                            
-                            search_results['results'] = Helper.add_search_result(dataset, search_filters, search_results['results'])
-                            search_results['count'] = int(search_results['count']) + 1 
+                            search_results = Helper.add_search_result(dataset, search_filters, search_results)                            
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
@@ -80,7 +79,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                     for sheet, columns in xlsx_sheet.items():
                         for col_name in columns:
                             if search_phrase in col_name.strip().lower():
-                                search_results['results'] = Helper.add_search_result(dataset, search_filters, search_results['results'])
+                                search_results = Helper.add_search_result(dataset, search_filters, search_results) 
                                 detected = True
                                 break
                         
