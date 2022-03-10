@@ -132,28 +132,51 @@ class Helper():
                 - search_result: search result array
         '''
 
-        if 'organization:' in search_filters_string:
-            # print(search_filters_string)
-            # print(dataset['organization']['name'])
-            search_filters = search_filters_string.split(' ') 
-            for filter in search_filters:
-                if 'organization:' not in filter:
-                    continue
-                org_name = filter.split(':')[1].strip()
-                # print(org_name)
-                if '"' + dataset['organization']['name'] + '"' == org_name:
-                     search_results['results'].append(dataset)
-                     search_results['count'] = int(search_results['count']) + 1 
-                     break
-        
-
-        else:
+        if Helper.apply_filters(dataset, search_filters_string):
             search_results['results'].append(dataset)
             search_results['count'] = int(search_results['count']) + 1 
-
-
     
         return search_results
+
+
+
+    @staticmethod
+    def apply_filters(dataset, search_filters_string):
+        '''
+            Apply all facet filters for a dataset.
+
+            Args:
+                - dataset: target dataset
+                - search_filters_string: ckan facet filter string. exist in search_params['fq']
+
+            Return:
+                - Boolean
+        '''
+
+        org_filter = True
+        type_filter = True
+        tag_filter = True
+        group_filter = True
+
+        if len(search_filters_string.split('organization:')) == 2:
+            org_name =  search_filters_string.split('organization:"')[1].split('"')[0].strip()
+            if dataset['organization']['name']  != org_name:
+                org_filter = False
+        
+        else:
+            if 'organization:' in search_filters_string:
+                org_filter = False
+        
+
+        if 'sfb_dataset_type' in dataset.keys() and len(search_filters_string.split('sfb_dataset_type:')) == 2:
+            dataset_type = search_filters_string.split('sfb_dataset_type:"')[1].split('"')[0].strip()
+            if  dataset['sfb_dataset_type']  != dataset_type:
+                type_filter = False
+        
+
+
+        return org_filter and type_filter
+
 
 
 
