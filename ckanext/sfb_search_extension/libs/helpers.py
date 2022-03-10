@@ -164,5 +164,24 @@ class Helper():
                         'count': 1
                         }) 
 
+        elif facet_name == 'groups':
+            for group in dataset['groups']:
+                place = 0
+                exist = False
+                for item in search_facet_object[facet_name]['items']:
+                    if group['name'] in item.values():
+                        search_facet_object[facet_name]['items'][place]['count'] += 1
+                        exist = True
+                        break
+                    place += 1
+                
+                if not exist:
+                    search_facet_object[facet_name]['items'].append({
+                        'name': group['name'], 
+                        'display_name': group['display_name'], 
+                        'count': 1
+                        }) 
+
+
 
         return search_facet_object

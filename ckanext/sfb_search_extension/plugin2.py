@@ -58,6 +58,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                             search_results['count'] = int(search_results['count']) + 1 
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
+                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
                             break
                 
                 elif Helper.is_xlsx(res):
