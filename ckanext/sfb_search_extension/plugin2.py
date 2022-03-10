@@ -21,7 +21,6 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         if 'column:' not in search_params['q']:
-            print(search_results['search_facets'])
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
@@ -29,8 +28,9 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
         else:
             search_phrase = search_params['q'].strip().lower()
 
-        # all_datasets = toolkit.get_action('package_list')({}, {'include_private': 'True'})
-
+        # empty the search result to remove unrelated search result by ckan.
+        search_results['results'] = [] 
+        search_results['count'] = 0 
         all_datasets = Package.search_by_name('')
         for package in all_datasets:
             if package.state != 'active':
@@ -44,6 +44,7 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                 continue
 
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
+            detected = False
             for res in dataset['resources']:
                 if Helper.is_csv(res):                    
                     # resource is csv
@@ -56,10 +57,16 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                         if search_phrase in col_name.strip().lower():                            
                             search_results['results'].append(dataset)
                             search_results['count'] = int(search_results['count']) + 1 
+                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
+                            detected = True
                             break
+                    
+                    if detected:
+                        break
+
                 
                 elif Helper.is_xlsx(res):
                     # resource is excel sheet
@@ -72,7 +79,14 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                         for col_name in columns:
                             if search_phrase in col_name.strip().lower():
                                 search_results['results'].append(dataset)
+                                detected = True
                                 break
+                        
+                        if detected:
+                            break
+                    
+                    if detected:
+                        break
                 
                 else:
                     continue

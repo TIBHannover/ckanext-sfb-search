@@ -181,6 +181,23 @@ class Helper():
                         'display_name': group['display_name'], 
                         'count': 1
                         }) 
+        
+        elif facet_name == 'sfb_dataset_type' and 'sfb_dataset_type' in dataset.keys():
+            place = 0
+            exist = False
+            for item in search_facet_object[facet_name]['items']:
+                if dataset[facet_name] in item.values():
+                    search_facet_object[facet_name]['items'][place]['count'] += 1
+                    exist = True
+                    break
+                place += 1
+            
+            if not exist and dataset['sfb_dataset_type'] not in ['', '0']:
+                search_facet_object[facet_name]['items'].append({
+                    'name': dataset['sfb_dataset_type'], 
+                    'display_name': dataset['sfb_dataset_type'], 
+                    'count': 1
+                    }) 
 
 
 
