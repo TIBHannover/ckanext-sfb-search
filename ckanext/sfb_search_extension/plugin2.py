@@ -62,12 +62,12 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                         except:
                             continue
 
-                        if search_phrase in col_name.strip().lower():
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
+                        if search_phrase in col_name.strip().lower():                            
                             if not detected:
+                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
+                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
+                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
+                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
                                 search_results = Helper.add_search_result(dataset, search_filters, search_results)                            
                             detected = True
                             search_results['detected_resources_ids'].append(res['id'])
@@ -88,12 +88,12 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                             except:
                                 continue
 
-                            if search_phrase in col_name.strip().lower():
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
+                            if search_phrase in col_name.strip().lower():                                
                                 if not detected:
+                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
+                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
+                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
+                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
                                     search_results = Helper.add_search_result(dataset, search_filters, search_results)
                                 search_results['detected_resources_ids'].append(res['id']) 
                                 detected = True
