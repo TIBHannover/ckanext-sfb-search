@@ -1,6 +1,18 @@
 {% ckan_extends %}
 
 {% block resources %}
-    {# {{g.detected_resources_ids}} #}
+    {% for res in package['resources'] %}
+        <ul>
+        {% if res['id'] in g.detected_resources_ids %}
+            
+            {% set resource_url = h.url_for('dataset_resource.read', resource_id=res['id'], package_type=package['type'], id=package['id'], _external=True) %}
+                <li>
+                    <a href="{{resource_url}}" target='_blank'>{{res['name']}}</a>
+                </li>
+            
+        {% endif %}
+        </ul>
+    {% endfor %}
+    
     {{ super() }}
 {% endblock  %}
