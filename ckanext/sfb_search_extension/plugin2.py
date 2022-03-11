@@ -57,6 +57,11 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                         csv_columns = []
 
                     for col_name in csv_columns:
+                        try:
+                            col_name = str(col_name)
+                        except:
+                            continue
+
                         if search_phrase in col_name.strip().lower():
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                             search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
@@ -80,6 +85,11 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
                     
                     for sheet, columns in xlsx_sheet.items():
                         for col_name in columns:
+                            try:
+                                col_name = str(col_name)
+                            except:
+                                continue
+                            
                             if search_phrase in col_name.strip().lower():
                                 search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                                 search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
