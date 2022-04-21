@@ -1,8 +1,9 @@
 from numpy import append
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-from ckanext.sfb_search_extension.libs.helpers import Helper
 from ckan.model import Package
+from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
+
 
 
 class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
@@ -35,77 +36,11 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
         search_results['detected_resources_ids'] = []
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
-        for package in all_datasets:
-            if package.state != 'active':
-                continue
-            
-            context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
-            data_dict = {'id':package.id}
-            try:
-                toolkit.check_access('package_show', context, data_dict)
-            except toolkit.NotAuthorized:
-                continue
-
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
-            detected = False
-            for res in dataset['resources']:
-                if Helper.is_csv(res):                    
-                    # resource is csv
-                    try:
-                        csv_columns = Helper.get_csv_columns(res['id']) 
-                    except:
-                        csv_columns = []
-
-                    for col_name in csv_columns:
-                        try:
-                            col_name = str(col_name)
-                        except:
-                            continue
-
-                        if search_phrase in col_name.strip().lower():                            
-                            if not detected:
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                                search_results = Helper.add_search_result(dataset, search_filters, search_results)                            
-                            detected = True
-                            search_results['detected_resources_ids'].append(res['id'])
-                            break
-                
-                elif Helper.is_xlsx(res):
-                    # resource is excel sheet
-                    try:
-                        xlsx_sheet = Helper.get_xlsx_columns(res['id'])
-                    except:
-                        xlsx_sheet = {}
-                        
-                    
-                    for sheet, columns in xlsx_sheet.items():
-                        for col_name in columns:
-                            try:
-                                col_name = str(col_name)
-                            except:
-                                continue
-
-                            if search_phrase in col_name.strip().lower():                                
-                                if not detected:
-                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                    search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                                    search_results = Helper.add_search_result(dataset, search_filters, search_results)
-                                search_results['detected_resources_ids'].append(res['id']) 
-                                detected = True
-                                break
-                        
-                        if detected:
-                            break
-                                    
-                else:
-                    continue
-        
-        toolkit.g.detected_resources_ids = search_results['detected_resources_ids']
+        search_results = ColumnSearchHelper.run(datasets=all_datasets, 
+            search_filters=search_filters, 
+            search_phrase=search_phrase, 
+            search_results=search_results
+            )
         return search_results
 
 

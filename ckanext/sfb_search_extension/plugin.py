@@ -1,7 +1,6 @@
-from numpy import append
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-from ckanext.sfb_search_extension.libs.helpers import Helper
+from ckanext.sfb_search_extension.libs.commons import CommonHelper
 
 
 class AutoTagPlugin(plugins.SingletonPlugin):
@@ -26,8 +25,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                 dataframe_columns = []
                 xls_dataframes_columns = {}
                 tags = []
-                if Helper.is_csv(resource):
-                    dataframe_columns = Helper.get_csv_columns(resource['id'])
+                if CommonHelper.is_csv(resource):
+                    dataframe_columns = CommonHelper.get_csv_columns(resource['id'])
                     for col in dataframe_columns:
                         if 'tags' in dataset.keys() and col not in dataset['tags']:
                             tag_dict = {'name': col}
@@ -36,8 +35,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     toolkit.get_action('package_update')({}, dataset)
                     return resource
                     
-                elif Helper.is_xlsx(resource):
-                    xls_dataframes_columns = Helper.get_xlsx_columns(resource['id'])
+                elif CommonHelper.is_xlsx(resource):
+                    xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
                     for sheet, columns in xls_dataframes_columns.items():
                         for col in columns:
                             if 'tags' in dataset.keys() and col not in dataset['tags']:
