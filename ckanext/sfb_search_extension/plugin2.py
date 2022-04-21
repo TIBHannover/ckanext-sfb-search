@@ -3,6 +3,8 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.model import Package
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
+from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
+from ckanext.sfb_search_extension.libs.commons import CommonHelper
 
 
 
@@ -52,7 +54,12 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             
             return search_results
         
-        elif search_mode == 'sample':
+        elif search_mode == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):
+            search_results = SampleSearchHelper.run(datasets=all_datasets, 
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+                )
             return search_results
         
         else:
