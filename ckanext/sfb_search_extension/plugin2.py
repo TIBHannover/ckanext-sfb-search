@@ -21,14 +21,20 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     # IPackageController
 
     def after_search(self, search_results, search_params):
-        if 'column:' not in search_params['q']:
-            # print(search_results['facets'])
+        search_mode = ''
+        if 'column:' not in search_params['q'] and 'sample:' not in search_params['q']:           
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
             search_phrase = search_params['q'].split('column:')[1].strip().lower()
+            search_mode = 'column'
+        
+        elif len(search_params['q'].split('sample:')) > 1:
+            search_phrase = search_params['q'].split('sample:')[1].strip().lower()
+            search_mode = 'sample'
+
         else:
-            search_phrase = search_params['q'].strip().lower()
+            return search_results
 
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = [] 
@@ -36,12 +42,21 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         search_results['detected_resources_ids'] = []
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
-        search_results = ColumnSearchHelper.run(datasets=all_datasets, 
-            search_filters=search_filters, 
-            search_phrase=search_phrase, 
-            search_results=search_results
-            )
-        return search_results
+
+        if search_mode == 'column':
+            search_results = ColumnSearchHelper.run(datasets=all_datasets, 
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+                )
+            
+            return search_results
+        
+        elif search_mode == 'sample':
+            return search_results
+        
+        else:
+            return search_results
 
 
 
