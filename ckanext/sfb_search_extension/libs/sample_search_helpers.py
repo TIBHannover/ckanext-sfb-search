@@ -51,6 +51,7 @@ class SampleSearchHelper():
                         detected = True
                         search_results['detected_resources_ids'].append(res['id'])
                         break
-       
+        
+        toolkit.g.detected_resources_ids = search_results['detected_resources_ids']
         return search_results
 
