@@ -6,7 +6,7 @@ from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearch
 
 
 
-class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
+class SfbSearchPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IPackageController)
 
