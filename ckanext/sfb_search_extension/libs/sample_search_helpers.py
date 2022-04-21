@@ -41,7 +41,7 @@ class SampleSearchHelper():
             for res in dataset['resources']:
                 samples = list(SampleLinkHelper.get_sample_link(res['id']).keys())
                 for name in samples:
-                    if search_phrase in name:
+                    if search_phrase in name.lower():
                         if not detected:
                             search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                             search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
