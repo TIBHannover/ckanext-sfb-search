@@ -1,11 +1,14 @@
 from numpy import append
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-from ckanext.sfb_search_extension.libs.helpers import Helper
 from ckan.model import Package
+from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
+from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
+from ckanext.sfb_search_extension.libs.commons import CommonHelper
 
 
-class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
+
+class SfbSearchPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IPackageController)
 
@@ -20,85 +23,47 @@ class ResourceColumnSearchPlugin(plugins.SingletonPlugin):
     # IPackageController
 
     def after_search(self, search_results, search_params):
-        if 'column:' not in search_params['q']:
-            # print(search_results['facets'])
+        search_mode = ''
+        if 'column:' not in search_params['q'] and 'sample:' not in search_params['q']:           
             return search_results
         
         elif len(search_params['q'].split('column:')) > 1:
             search_phrase = search_params['q'].split('column:')[1].strip().lower()
+            search_mode = 'column'
+        
+        elif len(search_params['q'].split('sample:')) > 1:
+            search_phrase = search_params['q'].split('sample:')[1].strip().lower()
+            search_mode = 'sample'
+
         else:
-            search_phrase = search_params['q'].strip().lower()
+            return search_results
 
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = [] 
         search_results['count'] = 0
-        print(search_results['facets']) 
+        search_results['detected_resources_ids'] = []
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
-        for package in all_datasets:
-            if package.state != 'active':
-                continue
+
+        if search_mode == 'column':
+            search_results = ColumnSearchHelper.run(datasets=all_datasets, 
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+                )
             
-            context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
-            data_dict = {'id':package.id}
-            try:
-                toolkit.check_access('package_show', context, data_dict)
-            except toolkit.NotAuthorized:
-                continue
-
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
-            detected = False
-            for res in dataset['resources']:
-                if Helper.is_csv(res):                    
-                    # resource is csv
-                    try:
-                        csv_columns = Helper.get_csv_columns(res['id']) 
-                    except:
-                        csv_columns = []
-
-                    for col_name in csv_columns:
-                        if search_phrase in col_name.strip().lower():
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                            search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                            search_results = Helper.add_search_result(dataset, search_filters, search_results)                            
-                            detected = True
-                            break
-                    
-                    if detected:
-                        break
-
-                
-                elif Helper.is_xlsx(res):
-                    # resource is excel sheet
-                    try:
-                        xlsx_sheet = Helper.get_xlsx_columns(res['id'])
-                    except:
-                        xlsx_sheet = {}
-                        
-                    
-                    for sheet, columns in xlsx_sheet.items():
-                        for col_name in columns:
-                            if search_phrase in col_name.strip().lower():
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                search_results['search_facets'] = Helper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                                search_results = Helper.add_search_result(dataset, search_filters, search_results) 
-                                detected = True
-                                break
-                        
-                        if detected:
-                            break
-                    
-                    if detected:
-                        break
-                
-                else:
-                    continue
+            return search_results
         
-        return search_results
+        elif search_mode == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):
+            search_results = SampleSearchHelper.run(datasets=all_datasets, 
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+                )
+            return search_results
+        
+        else:
+            return search_results
 
 
 
