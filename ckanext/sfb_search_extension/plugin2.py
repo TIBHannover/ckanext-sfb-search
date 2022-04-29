@@ -23,15 +23,15 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         search_mode = ''
-        if 'column:' not in search_params['q'] and 'sample:' not in search_params['q']:           
+        if 'column:' not in search_params['q'].lower() and 'sample:' not in search_params['q'].lower():           
             return search_results
         
-        elif len(search_params['q'].split('column:')) > 1:
-            search_phrase = search_params['q'].split('column:')[1].strip().lower()
+        elif len(search_params['q'].lower().split('column:')) > 1:
+            search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
             search_mode = 'column'
         
-        elif len(search_params['q'].split('sample:')) > 1:
-            search_phrase = search_params['q'].split('sample:')[1].strip().lower()
+        elif len(search_params['q'].lower().split('sample:')) > 1:
+            search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
             search_mode = 'sample'
 
         else:
@@ -44,7 +44,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
 
-        if search_mode == 'column':
+        if search_mode.lower() == 'column':
             search_results = ColumnSearchHelper.run(datasets=all_datasets, 
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
@@ -53,7 +53,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             
             return search_results
         
-        elif search_mode == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):
+        elif search_mode.lower() == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):
             search_results = SampleSearchHelper.run(datasets=all_datasets, 
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
