@@ -23,10 +23,11 @@ class AutoTagPlugin(plugins.SingletonPlugin):
         if resource['url_type'] == 'upload':
             try:
                 dataframe_columns = []
-                xls_dataframes_columns = {}
-                tags = []
+                xls_dataframes_columns = {}                
                 if CommonHelper.is_csv(resource):
-                    dataframe_columns = CommonHelper.get_csv_columns(resource['id'])
+                    dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+                    if not fit_for_autotag:
+                        return resource                    
                     for col in dataframe_columns:
                         if 'tags' in dataset.keys() and col not in dataset['tags']:
                             tag_dict = {'name': col}
@@ -37,8 +38,11 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     
                 elif CommonHelper.is_xlsx(resource):
                     xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
-                    for sheet, columns in xls_dataframes_columns.items():
-                        for col in columns:
+                    for sheet, columns_object in xls_dataframes_columns.items():
+                        for object in columns_object:
+                            if not object[1]:
+                                # not fit for autotag
+                                continue
                             if 'tags' in dataset.keys() and col not in dataset['tags']:
                                 tag_dict = {'name': col}
                                 dataset['tags'].append(tag_dict)
