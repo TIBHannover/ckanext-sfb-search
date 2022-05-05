@@ -319,7 +319,7 @@ class ColumnSearchHelper():
                         'count': 1
                         }) 
         
-        elif facet_name == 'sfb_dataset_type' and 'sfb_dataset_type' in dataset.keys():
+        elif facet_name == 'sfb_dataset_type' and 'sfb_dataset_type' in dataset.keys() and facet_name in search_facet_object.keys():
             place = 0
             exist = False
             for item in search_facet_object[facet_name]['items']:
