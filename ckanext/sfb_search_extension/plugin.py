@@ -39,10 +39,10 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                 elif CommonHelper.is_xlsx(resource):
                     xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
                     for sheet, columns_object in xls_dataframes_columns.items():
-                        for object in columns_object:
-                            if not object[1]:
-                                # not fit for autotag
-                                continue
+                        if not columns_object[1]:
+                            # not fit for autotag
+                            continue
+                        for col in columns_object[0]:                            
                             if 'tags' in dataset.keys() and col not in dataset['tags']:
                                 tag_dict = {'name': col}
                                 dataset['tags'].append(tag_dict)
