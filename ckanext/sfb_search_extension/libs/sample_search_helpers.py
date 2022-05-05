@@ -28,6 +28,14 @@ class SampleSearchHelper():
         for package in datasets:
             if package.state != 'active':
                 continue
+
+            if 'owner_org' in search_filters:
+                owner_org_id = search_filters.split('owner_org:')[1]
+                if ' ' in owner_org_id:
+                    owner_org_id = owner_org_id.split(' ')[0]                    
+                if '"' + package.owner_org + '"' != owner_org_id:
+                    continue
+
             context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
             data_dict = {'id':package.id}
             try:

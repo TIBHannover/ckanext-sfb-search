@@ -44,7 +44,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         search_filters = search_params['fq'][0]
         all_datasets = Package.search_by_name('')
 
-        if search_mode.lower() == 'column':
+        if search_mode.lower() == 'column':            
             search_results = ColumnSearchHelper.run(datasets=all_datasets, 
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
@@ -53,7 +53,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             
             return search_results
         
-        elif search_mode.lower() == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):
+        elif search_mode.lower() == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):            
             search_results = SampleSearchHelper.run(datasets=all_datasets, 
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
