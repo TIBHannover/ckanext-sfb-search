@@ -1,5 +1,8 @@
 # encoding: utf-8
 
+from struct import pack
+
+from sqlalchemy import false, true
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
@@ -26,22 +29,28 @@ class SampleSearchHelper():
         '''
 
         for package in datasets:
-            if package.state != 'active':
+            if package.state != 'active' or not CommonHelper.check_access_package(package.id):
                 continue
-
+            
             if 'owner_org' in search_filters:
                 owner_org_id = search_filters.split('owner_org:')[1]
                 if ' ' in owner_org_id:
                     owner_org_id = owner_org_id.split(' ')[0]                    
                 if '"' + package.owner_org + '"' != owner_org_id:
                     continue
-
-            context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
-            data_dict = {'id':package.id}
-            try:
-                toolkit.check_access('package_show', context, data_dict)
-            except toolkit.NotAuthorized:
-                continue
+            
+            if 'groups' in search_filters:
+                this_dataset_groups = package.get_groups()
+                target_group_title = search_filters.split('groups:')[1]
+                if ' ' in target_group_title:
+                    target_group_title = target_group_title.split(' ')[0]
+                is_part_of_group = false
+                for g in this_dataset_groups:
+                    if '"' + g.title + '"' != target_group_title:
+                        is_part_of_group = true
+                        break
+                if not is_part_of_group:
+                    continue
             
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             detected = False
