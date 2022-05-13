@@ -20,7 +20,7 @@ class CommonHelper():
             if header.strip() not in STANDARD_HEADERS:
                 return False
         return True
-
+    
 
 
     @staticmethod
@@ -34,6 +34,7 @@ class CommonHelper():
             Returns:
                 - Boolean        
         '''
+
         format = ''
         name = ''
         if isinstance(resource, dict):
@@ -63,10 +64,10 @@ class CommonHelper():
         df = clevercsv.read_dataframe(file_path)
         df = df.fillna(0)        
         if not CommonHelper.is_possible_to_automate(df):
-            return list(df.columns)
+            return [list(df.columns), False]
         else:
             # skip the first row to get the actual columns names
-            return list(df.iloc[0])
+            return [list(df.iloc[0]), True]
     
 
 
@@ -117,9 +118,9 @@ class CommonHelper():
                 headers = temp_df.iloc[0]
                 final_data_df  = pd.DataFrame(temp_df.values[1:], columns=headers)
                 if not CommonHelper.is_possible_to_automate(final_data_df):
-                    result_df[sheet] = final_data_df
+                    result_df[sheet] = [final_data_df, False]
                 else:
-                    result_df[sheet] = list(final_data_df.iloc[0])                
+                    result_df[sheet] = [list(final_data_df.iloc[0]), True]
 
         return result_df
     
