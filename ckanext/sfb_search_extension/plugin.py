@@ -29,8 +29,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     if not fit_for_autotag:
                         return resource                    
                     for col in dataframe_columns:
-                        if 'tags' in dataset.keys() and col not in dataset['tags']:
-                            tag_dict = {'name': col}
+                        if 'tags' in dataset.keys() and col.title() not in dataset['tags']:
+                            tag_dict = {'name': col.title()}
                             dataset['tags'].append(tag_dict)
                     
                     toolkit.get_action('package_update')({}, dataset)
@@ -43,8 +43,8 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                             # not fit for autotag
                             continue
                         for col in columns_object[0]:                            
-                            if 'tags' in dataset.keys() and col not in dataset['tags']:
-                                tag_dict = {'name': col}
+                            if 'tags' in dataset.keys() and col.title() not in dataset['tags']:
+                                tag_dict = {'name': col.title()}
                                 dataset['tags'].append(tag_dict)
 
                     toolkit.get_action('package_update')({}, dataset)

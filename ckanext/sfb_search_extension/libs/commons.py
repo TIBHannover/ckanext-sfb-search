@@ -123,7 +123,6 @@ class CommonHelper():
                     result_df[sheet] = [list(final_data_df.iloc[0]), True]
 
         return result_df
-    
 
 
     def check_plugin_enabled(plugin_name):
