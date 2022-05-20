@@ -4,12 +4,14 @@ from ckan.model import Package
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
 from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
+from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
 
 
 
 class SfbSearchPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IPackageController)
+    plugins.implements(plugins.IResourceController)
 
 
     # IConfigurer
@@ -99,3 +101,39 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     def before_view(self, pkg_dict):
         return pkg_dict
+    
+
+
+     # IResourceController
+
+    def after_create(self, context, resource):
+        if resource['url_type'] == 'upload':
+            if CommonHelper.is_csv(resource):
+                dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+                columns_names = ""
+                for col in dataframe_columns:
+                    columns_names += (col + ",")
+                column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
+                column_indexer.save()
+  
+        return resource
+
+
+    
+    def before_create(self, context, resource):
+        return resource
+
+    def before_update(self, context, current, resource):
+        return resource
+    
+    def after_update(self, context, resource):
+        return resource
+    
+    def before_delete(self, context, resource, resources):
+        return resources
+    
+    def after_delete(self, context, resources):
+        return resources
+    
+    def before_show(self, resource_dict):
+        return resource_dict
