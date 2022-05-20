@@ -17,8 +17,13 @@ depends_on = None
 
 
 def upgrade():
-    pass
+    op.create_table(
+        'data_resource_column_index',
+        sa.Column('id', sa.Integer, primary_key=True, nullable=False),
+        sa.Column('resource_id', sa.UnicodeText(), sa.ForeignKey('resource.id'), nullable=False),
+        sa.Column('columns_names', sa.UnicodeText(), nullable=False)
+    )
 
 
 def downgrade():
-    pass
+    op.drop_table('data_resource_column_index')
