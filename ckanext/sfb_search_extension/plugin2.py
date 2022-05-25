@@ -107,12 +107,25 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
      # IResourceController
 
     def after_create(self, context, resource):
+        if "url_type" not in resource.keys():
+            return resource
+            
         if resource['url_type'] == 'upload':
             if CommonHelper.is_csv(resource):
                 dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
                 columns_names = ""
                 for col in dataframe_columns:
                     columns_names += (col + ",")
+                column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
+                column_indexer.save()
+            
+            elif CommonHelper.is_xlsx(resource):
+                xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
+                columns_names = ""
+                for sheet, columns_object in xls_dataframes_columns.items():
+                    for col in columns_object[0]:  
+                        columns_names += (col + ",")
+                
                 column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
                 column_indexer.save()
   
