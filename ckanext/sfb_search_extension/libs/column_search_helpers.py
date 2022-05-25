@@ -25,13 +25,13 @@ class ColumnSearchHelper():
 
         column_indexer_model = DataResourceColumnIndex()
         all_indexes = column_indexer_model.get_all()
+        already_included_datasets = []  
         for record in all_indexes:
             resource_id = record.resource_id
             resource_index_value = record.columns_names
             context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
             resource = ""
-            dataset = ""
-            already_included_datasets = []          
+            dataset = ""        
             if search_phrase.lower() in resource_index_value.lower():
                 try:
                     toolkit.check_access('resource_show', context, {'id':resource_id})

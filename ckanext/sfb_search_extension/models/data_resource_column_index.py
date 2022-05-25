@@ -40,7 +40,7 @@ class DataResourceColumnIndex(domain_object.DomainObject):
             return False
         query = meta.Session.query(cls).filter(cls.resource_id==id)
         query = query.autoflush(autoflush)
-        record = query
+        record = query.all()
         return record
 
     

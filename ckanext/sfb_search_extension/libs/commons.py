@@ -42,8 +42,7 @@ class CommonHelper():
                         for col in dataframe_columns:
                             columns_names += (col + ",")
                         if len(dataframe_columns) != 0:
-                            column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                            column_indexer.save()
+                            CommonHelper.add_index(resource['id'], columns_names)  
                     
                     elif CommonHelper.is_xlsx(resource):
                         xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
@@ -54,11 +53,34 @@ class CommonHelper():
                         for sheet, columns_object in xls_dataframes_columns.items():
                             for col in columns_object[0]:  
                                 columns_names += (col + ",")
-                        
-                        column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                        column_indexer.save()
+                                
+                        CommonHelper.add_index(resource['id'], columns_names)                       
         
         return "Indexed"
+
+
+
+    @staticmethod
+    def add_index(resource_id, index_value):
+        '''
+            Index a data resource columns name in the database.
+        '''
+        
+        check_existence_indexer = DataResourceColumnIndex()
+        if not check_existence_indexer.get_by_resource(id=resource_id):
+            column_indexer = DataResourceColumnIndex(resource_id=resource_id, columns_names=index_value)
+            column_indexer.save()
+            return True
+        
+        # first delete all old records and then add
+        records = check_existence_indexer.get_by_resource(id=resource_id)
+        for rec in records:
+            rec.delete()
+            rec.commit()
+        
+        column_indexer = DataResourceColumnIndex(resource_id=resource_id, columns_names=index_value)
+        column_indexer.save()
+
 
 
 
