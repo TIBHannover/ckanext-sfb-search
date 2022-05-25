@@ -86,6 +86,14 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
 
     def after_delete(self, context, pkg_dict):
+        dataset = toolkit.get_action('package_show')({}, {'name_or_id': pkg_dict['id']})
+        for resource in dataset['resources']:
+            column_indexer = DataResourceColumnIndex()
+            records = column_indexer.get_by_resource(id=resource['id'])
+            for rec in records:
+                rec.delete()
+                rec.commit()
+
         return pkg_dict
 
     def read(self, entity):
@@ -148,7 +156,19 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         return resource
 
 
+
+    def before_delete(self, context, resource, resources):
+        column_indexer = DataResourceColumnIndex()
+        records = column_indexer.get_by_resource(id=resource['id'])
+        for rec in records:
+            rec.delete()
+            rec.commit()
+        return resources    
+
     
+    def after_delete(self, context, resources):        
+        return resources
+
     def before_create(self, context, resource):
         return resource
 
@@ -156,13 +176,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         return resource
     
     def after_update(self, context, resource):
-        return resource
-    
-    def before_delete(self, context, resource, resources):
-        return resources
-    
-    def after_delete(self, context, resources):
-        return resources
+        return resource    
     
     def before_show(self, resource_dict):
         return resource_dict
