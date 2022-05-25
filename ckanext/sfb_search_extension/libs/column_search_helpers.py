@@ -2,6 +2,7 @@
 
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
+from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
 
 
 
@@ -22,73 +23,42 @@ class ColumnSearchHelper():
                 - search_results dictionary
         '''
 
-        for package in datasets:
-            if package.state != 'active':
-                continue
+        column_indexer_model = DataResourceColumnIndex()
+        all_indexes = column_indexer_model.get_all()
+        for record in all_indexes:
+            resource_id = record.resource_id
+            resource_index_value = record.columns_names
             context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
-            data_dict = {'id':package.id}
-            try:
-                toolkit.check_access('package_show', context, data_dict)
-            except toolkit.NotAuthorized:
-                continue
-            
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
-            detected = False
-            for res in dataset['resources']:
-                if CommonHelper.is_csv(res):                    
-                    # resource is csv
-                    try:
-                        csv_columns = CommonHelper.get_csv_columns(res['id']) 
-                    except:
-                        csv_columns = []
-                    
-                    for col_name in csv_columns:
-                        try:
-                            col_name = str(col_name)
-                        except:
-                            continue
-                    
-                        if search_phrase in col_name.strip().lower():                            
-                            if not detected:
-                                search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                                search_results = ColumnSearchHelper.add_search_result(dataset, search_filters, search_results)                            
-                            detected = True
-                            search_results['detected_resources_ids'].append(res['id'])
-                            break
-                
-                elif CommonHelper.is_xlsx(res):
-                    # resource is excel sheet
-                    try:
-                        xlsx_sheet = CommonHelper.get_xlsx_columns(res['id'])
-                    except:
-                        xlsx_sheet = {}
-                                            
-                    for sheet, columns in xlsx_sheet.items():
-                        for col_name in columns:
-                            try:
-                                col_name = str(col_name)
-                            except:
-                                continue
-
-                            if search_phrase in col_name.strip().lower():                                
-                                if not detected:
-                                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
-                                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
-                                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'tags')
-                                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'groups')
-                                    search_results = ColumnSearchHelper.add_search_result(dataset, search_filters, search_results)
-                                search_results['detected_resources_ids'].append(res['id']) 
-                                detected = True
-                                break
-                        
-                        if detected:
-                            break
-                
-                else:
+            resource = ""
+            dataset = ""
+            already_included_datasets = []          
+            if search_phrase.lower() in resource_index_value.lower():
+                try:
+                    toolkit.check_access('resource_show', context, {'id':resource_id})
+                    resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
+                except toolkit.NotAuthorized:
                     continue
+
+                try:
+                    toolkit.check_access('package_show', context, {'name_or_id': resource['package_id']})
+                    dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+                except toolkit.NotAuthorized:
+                    continue
+
+                if dataset['state'] != "active":
+                    continue
+                
+                if dataset['id'] not in already_included_datasets:
+                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
+                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
+                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'tags')
+                    search_results['search_facets'] = ColumnSearchHelper.update_search_facet(search_results['search_facets'], dataset, 'groups')
+                    search_results = ColumnSearchHelper.add_search_result(dataset, search_filters, search_results)
+                    already_included_datasets.append(dataset['id'])
+                
+                search_results['detected_resources_ids'].append(resource_id)
+
+
         
         toolkit.g.detected_resources_ids = search_results['detected_resources_ids']
         return search_results

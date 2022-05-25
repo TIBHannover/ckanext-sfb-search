@@ -5,6 +5,7 @@ from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearch
 from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
+from flask import Blueprint
 
 
 
@@ -12,6 +13,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IPackageController)
     plugins.implements(plugins.IResourceController)
+    plugins.implements(plugins.IBlueprint)
 
 
     # IConfigurer
@@ -20,6 +22,20 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('public/statics', 'ckanext-sfb-search')
+    
+
+
+    def get_blueprint(self):
+        blueprint = Blueprint(self.name, self.__module__)        
+        blueprint.add_url_rule(
+            u'/sfb_search/indexer',
+            u'indexer',
+            CommonHelper.indexer,
+            methods=['GET']
+            )   
+        
+
+        return blueprint 
     
 
     # IPackageController
@@ -109,7 +125,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     def after_create(self, context, resource):
         if "url_type" not in resource.keys():
             return resource
-            
+
         if resource['url_type'] == 'upload':
             if CommonHelper.is_csv(resource):
                 dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])

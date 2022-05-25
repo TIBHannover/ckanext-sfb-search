@@ -19,7 +19,15 @@ data_resource_column_index_table = Table(
 class DataResourceColumnIndex(domain_object.DomainObject):
     def __init__(self, resource_id=None, columns_names=None):
         self.resource_id = resource_id
-        self.columns_names = columns_names        
+        self.columns_names = columns_names      
+
+
+
+    @classmethod
+    def get_all(cls, autoflush=True):
+        query = meta.Session.query(cls)  
+        query = query.autoflush(autoflush)
+        return query
      
 
     @classmethod
