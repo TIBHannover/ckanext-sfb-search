@@ -40,7 +40,7 @@ class CommonHelper():
                         dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
                         columns_names = ""
                         for col in dataframe_columns:
-                            columns_names += (col + ",")
+                            columns_names += (str(col) + ",")
                         if len(dataframe_columns) != 0:
                             CommonHelper.add_index(resource['id'], columns_names)  
                     
@@ -52,7 +52,7 @@ class CommonHelper():
                         columns_names = ""
                         for sheet, columns_object in xls_dataframes_columns.items():
                             for col in columns_object[0]:  
-                                columns_names += (col + ",")
+                                columns_names += (str(col) + ",")
                                 
                         CommonHelper.add_index(resource['id'], columns_names)                       
         
