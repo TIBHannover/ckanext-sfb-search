@@ -111,11 +111,14 @@ class CommonHelper():
         format = ''
         name = ''
         if isinstance(resource, dict):
-            format = resource['format']
-            name = resource['name']
+            format = resource.get('format')
+            name = resource.get('name')
         else:
             format = resource.format
             name = resource.name
+        
+        if not format:
+            return False
         
         return (format in ['CSV']) or ('.csv' in name)
     
@@ -163,12 +166,15 @@ class CommonHelper():
         format = ''
         name = ''
         if isinstance(resource, dict):
-            format = resource['format']
-            name = resource['name']
+            format = resource.get('format')
+            name = resource.get('name')
         else:
             format = resource.format
             name = resource.name
         
+        if not format:
+            return False
+
         return (format in ['XLSX']) or ('.xlsx' in name)
 
 

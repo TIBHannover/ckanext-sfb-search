@@ -158,6 +158,8 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
 
     def before_delete(self, context, resource, resources):
+        if not CommonHelper.is_csv(resource) and not CommonHelper.is_xlsx(resource):
+            return resource
         column_indexer = DataResourceColumnIndex()
         records = column_indexer.get_by_resource(id=resource['id'])
         for rec in records:
