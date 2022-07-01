@@ -26,7 +26,15 @@ class CommonHelper():
         try:
             logic.check_access('sysadmin', context, {})
         except logic.NotAuthorized:
-            toolkit.abort(403, 'Not allowed')
+            toolkit.abort(404, 'Not found')
+
+        # empty the index table
+        indexTableModel = DataResourceColumnIndex()
+        records = indexTableModel.get_all()
+        for rec in records:
+            rec.delete()
+            rec.commit()
+
 
         all_datasets = Package.search_by_name('')
         for package in all_datasets:
@@ -35,7 +43,7 @@ class CommonHelper():
             
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             for resource in dataset['resources']:
-                 if resource['url_type'] == 'upload':
+                 if resource['url_type'] == 'upload' and resource['state'] == "active":
                     if CommonHelper.is_csv(resource):
                         dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
                         columns_names = ""

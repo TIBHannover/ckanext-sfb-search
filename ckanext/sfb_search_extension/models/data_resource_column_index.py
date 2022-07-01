@@ -27,7 +27,7 @@ class DataResourceColumnIndex(domain_object.DomainObject):
     def get_all(cls, autoflush=True):
         query = meta.Session.query(cls)  
         query = query.autoflush(autoflush)
-        return query
+        return query.all()
      
 
     @classmethod
