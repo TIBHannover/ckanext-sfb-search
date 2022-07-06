@@ -42,7 +42,8 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         search_mode = ''
-        if 'column:' not in search_params['q'].lower() and 'sample:' not in search_params['q'].lower():           
+        search_types = ['column:', 'sample:', 'material_combination:', 'surface_preparation:', 'atmosphere:', 'data_type:', 'analysis_method:']
+        if search_params['q'].lower() not in search_types:           
             return search_results
         
         elif len(search_params['q'].lower().split('column:')) > 1:
@@ -52,6 +53,26 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         elif len(search_params['q'].lower().split('sample:')) > 1:
             search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
             search_mode = 'sample'
+        
+        elif len(search_params['q'].lower().split('material_combination:')) > 1:
+            search_phrase = search_params['q'].lower().split('material_combination:')[1].strip().lower()
+            search_mode = 'material_combination'
+        
+        elif len(search_params['q'].lower().split('surface_preparation:')) > 1:
+            search_phrase = search_params['q'].lower().split('surface_preparation:')[1].strip().lower()
+            search_mode = 'surface_preparation'
+        
+        elif len(search_params['q'].lower().split('atmosphere:')) > 1:
+            search_phrase = search_params['q'].lower().split('atmosphere:')[1].strip().lower()
+            search_mode = 'atmosphere'
+        
+        elif len(search_params['q'].lower().split('data_type:')) > 1:
+            search_phrase = search_params['q'].lower().split('data_type:')[1].strip().lower()
+            search_mode = 'data_type'
+        
+        elif len(search_params['q'].lower().split('analysis_method:')) > 1:
+            search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
+            search_mode = 'analysis_method'
 
         else:
             return search_results
