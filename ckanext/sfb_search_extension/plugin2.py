@@ -42,11 +42,11 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         search_mode = ''
-        search_types = ['column:', 'sample:', 'material_combination:', 'surface_preparation:', 'atmosphere:', 'data_type:', 'analysis_method:']
-        if search_params['q'].lower() not in search_types:           
+        search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method']
+        if search_params['q'].split(':')[0].lower() not in search_types:
             return search_results
         
-        elif len(search_params['q'].lower().split('column:')) > 1:
+        elif len(search_params['q'].lower().split('column:')) > 1:            
             search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
             search_mode = 'column'
         
@@ -74,7 +74,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
             search_mode = 'analysis_method'
 
-        else:
+        else:            
             return search_results
 
         # empty the search result to remove unrelated search result by ckan.
@@ -85,7 +85,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         all_datasets = Package.search_by_name('')
 
         if search_mode.lower() == 'column':            
-            search_results = ColumnSearchHelper.run(datasets=all_datasets, 
+            search_results = ColumnSearchHelper.run(
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
                 search_results=search_results
