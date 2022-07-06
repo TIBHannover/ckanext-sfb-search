@@ -1,8 +1,6 @@
 # encoding: utf-8
 
-from struct import pack
 
-from sqlalchemy import false, true
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 if CommonHelper.check_plugin_enabled("sample_link"):
@@ -31,6 +29,7 @@ class SampleSearchHelper():
             if package.state != 'active' or not CommonHelper.check_access_package(package.id):
                 continue
             
+            # only consider dataset in an organization. If search triggers from an organization page.
             if 'owner_org' in search_filters:
                 owner_org_id = search_filters.split('owner_org:')[1]
                 if ' ' in owner_org_id:
@@ -38,15 +37,16 @@ class SampleSearchHelper():
                 if '"' + package.owner_org + '"' != owner_org_id:
                     continue
             
+            # only consider dataset in a group. If search triggers from a group page.
             if 'groups' in search_filters:
                 this_dataset_groups = package.get_groups()
                 target_group_title = search_filters.split('groups:')[1]
                 if ' ' in target_group_title:
                     target_group_title = target_group_title.split(' ')[0]
-                is_part_of_group = false
+                is_part_of_group = False
                 for g in this_dataset_groups:
                     if '"' + g.title + '"' != target_group_title:
-                        is_part_of_group = true
+                        is_part_of_group = True
                         break
                 if not is_part_of_group:
                     continue
