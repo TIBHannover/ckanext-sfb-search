@@ -47,7 +47,8 @@ class ColumnSearchHelper():
 
                 if dataset['state'] != "active":
                     continue
-
+                
+                
                 # only consider dataset in an organization. If search triggers from an organization page.
                 if 'owner_org' in search_filters:
                     owner_org_id = search_filters.split('owner_org:')[1]
@@ -59,20 +60,20 @@ class ColumnSearchHelper():
 
                 # only consider dataset in a group. If search triggers from a group page.
                 if 'groups' in search_filters:
-                    this_dataset_groups = dataset['groups']
-                    target_group_title = search_filters.split('groups:')[1]
+                    this_dataset_groups = dataset['groups']                    
+                    target_group_title = search_filters.split('groups:')[1]                                      
                     if ' ' in target_group_title:
                         target_group_title = target_group_title.split(' ')[0]
                     is_part_of_group = False
                     for g in this_dataset_groups:
-                        if '"' + g['title'] + '"' != target_group_title:
+                        if '"' + g['name'] + '"' == target_group_title:
                             is_part_of_group = True
                             break
                     if not is_part_of_group:
                         continue
 
                 
-                if dataset['id'] not in already_included_datasets:                                    
+                if dataset['id'] not in already_included_datasets:            
                     search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                     search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
                     search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'tags')

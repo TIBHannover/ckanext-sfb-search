@@ -45,7 +45,7 @@ class SampleSearchHelper():
                     target_group_title = target_group_title.split(' ')[0]
                 is_part_of_group = False
                 for g in this_dataset_groups:
-                    if '"' + g.title + '"' != target_group_title:
+                    if '"' + g.name + '"' == target_group_title:
                         is_part_of_group = True
                         break
                 if not is_part_of_group:
