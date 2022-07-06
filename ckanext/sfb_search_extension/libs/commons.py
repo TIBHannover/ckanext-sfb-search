@@ -89,6 +89,33 @@ class CommonHelper():
 
 
 
+    @staticmethod
+    def skip_data(resource_id):
+        '''
+            Skip the resource owner dataset that should not be on the search result.
+        '''
+
+        context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
+        resource = ""
+        dataset = "" 
+        try:
+            toolkit.check_access('resource_show', context, {'id':resource_id})
+            resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
+        except toolkit.NotAuthorized:
+            return True
+
+        try:
+            toolkit.check_access('package_show', context, {'name_or_id': resource['package_id']})
+            dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+        except toolkit.NotAuthorized:
+            return True
+
+        if dataset['state'] != "active":
+            return True
+        
+        return False
+
+
 
     @staticmethod
     def is_possible_to_automate(resource_df):

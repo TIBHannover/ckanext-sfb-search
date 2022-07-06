@@ -3,6 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.model import Package
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
 from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
+from ckanext.sfb_search_extension.libs.resource_metadata_search_helper import ResourceMetadataSearchHelper
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
 from flask import Blueprint
@@ -42,6 +43,7 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     def after_search(self, search_results, search_params):
         search_mode = ''
+        target_metadata = ""
         search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method']
         if search_params['q'].split(':')[0].lower() not in search_types:
             return search_results
@@ -56,23 +58,28 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         
         elif len(search_params['q'].lower().split('material_combination:')) > 1:
             search_phrase = search_params['q'].lower().split('material_combination:')[1].strip().lower()
-            search_mode = 'material_combination'
+            target_metadata = 'material_combination'
+            search_mode = "resource_metadata"
         
         elif len(search_params['q'].lower().split('surface_preparation:')) > 1:
             search_phrase = search_params['q'].lower().split('surface_preparation:')[1].strip().lower()
-            search_mode = 'surface_preparation'
+            target_metadata = 'surface_preparation'
+            search_mode = "resource_metadata"
         
         elif len(search_params['q'].lower().split('atmosphere:')) > 1:
             search_phrase = search_params['q'].lower().split('atmosphere:')[1].strip().lower()
-            search_mode = 'atmosphere'
+            target_metadata = 'atmosphere'
+            search_mode = "resource_metadata"
         
         elif len(search_params['q'].lower().split('data_type:')) > 1:
             search_phrase = search_params['q'].lower().split('data_type:')[1].strip().lower()
-            search_mode = 'data_type'
+            target_metadata = 'data_type'
+            search_mode = "resource_metadata"
         
         elif len(search_params['q'].lower().split('analysis_method:')) > 1:
             search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
-            search_mode = 'analysis_method'
+            target_metadata = 'analysis_method'
+            search_mode = "resource_metadata"
 
         else:            
             return search_results
@@ -103,6 +110,16 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
                 search_phrase=search_phrase, 
                 search_results=search_results
                 )
+            return search_results
+        
+        elif search_mode.lower() == 'resource_metadata':
+            search_results = ResourceMetadataSearchHelper.run(
+                datasets=all_datasets,
+                target_metadata_name=target_metadata,
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+            )
             return search_results
         
         else:

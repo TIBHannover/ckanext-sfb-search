@@ -28,26 +28,13 @@ class ColumnSearchHelper():
         already_included_datasets = []  
         for record in all_indexes:
             resource_id = record.resource_id
-            resource_index_value = record.columns_names
-            context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
-            resource = ""
-            dataset = ""        
+            resource_index_value = record.columns_names                    
             if search_phrase.lower() in resource_index_value.lower():
-                try:
-                    toolkit.check_access('resource_show', context, {'id':resource_id})
-                    resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
-                except toolkit.NotAuthorized:
-                    continue
-
-                try:
-                    toolkit.check_access('package_show', context, {'name_or_id': resource['package_id']})
-                    dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
-                except toolkit.NotAuthorized:
-                    continue
-
-                if dataset['state'] != "active":
+                if CommonHelper.skip_data(resource_id):
                     continue
                 
+                resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
+                dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
                 
                 # only consider dataset in an organization. If search triggers from an organization page.
                 if 'owner_org' in search_filters:
