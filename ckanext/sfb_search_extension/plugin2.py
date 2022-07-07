@@ -87,9 +87,10 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         # empty the search result to remove unrelated search result by ckan.
         search_results['results'] = []
         search_results['search_facets']['organization']['items'] = []
-        search_results['search_facets']['sfb_dataset_type']['items'] = []
         search_results['search_facets']['tags']['items'] = []
         search_results['search_facets']['groups']['items'] = []
+        if(search_results['search_facets'].get('sfb_dataset_type')):
+            search_results['search_facets']['sfb_dataset_type']['items'] = []
         search_results['count'] = 0
         search_results['detected_resources_ids'] = []
         search_filters = search_params['fq'][0]
