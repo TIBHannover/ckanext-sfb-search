@@ -44,13 +44,17 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     def after_search(self, search_results, search_params):
         search_mode = ''
         target_metadata = ""
-        search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method']
+        search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method', 'publication']
         if search_params['q'].split(':')[0].lower() not in search_types:
             return search_results
         
         elif len(search_params['q'].lower().split('column:')) > 1:            
             search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
             search_mode = 'column'
+        
+        elif len(search_params['q'].lower().split('publication:')) > 1:            
+            search_phrase = search_params['q'].lower().split('publication:')[1].strip().lower()
+            search_mode = 'publication'
         
         elif len(search_params['q'].lower().split('sample:')) > 1:
             search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
