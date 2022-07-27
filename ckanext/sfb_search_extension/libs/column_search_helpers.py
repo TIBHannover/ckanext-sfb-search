@@ -14,7 +14,6 @@ class ColumnSearchHelper():
             Run the search for column in data resources.
 
             Args:
-                - datasets: the target datasets to search in. 
                 - search_phrase: the search input
                 - search_filters: the ckan search facets dictionary (search_params['fq'][0])
                 - search_results: the ckan search results dictionary.
