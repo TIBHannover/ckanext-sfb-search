@@ -2,6 +2,7 @@
 
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
+from sqlalchemy.sql.expression import false
 if CommonHelper.check_plugin_enabled("dataset_reference"):
     from ckanext.dataset_reference.models.package_reference_link import PackageReferenceLink
 
@@ -24,7 +25,7 @@ class PublicationSearchHelper():
                 - search_results dictionary
         '''
 
-        pub_model = PackageReferenceLink()
+        pub_model = PackageReferenceLink({})
         for package in datasets:
             if package.state != 'active' or not CommonHelper.check_access_package(package.id):
                 continue
@@ -54,8 +55,13 @@ class PublicationSearchHelper():
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             detected = False            
             linked_publications = pub_model.get_by_package(name=dataset['name'])
+            if linked_publications == false:
+                continue
+
             for pub in linked_publications:
-                if search_phrase.lower() in pub['citation']:
+                if not pub.citation:
+                    continue                
+                if search_phrase.lower() in pub.citation:
                     if not detected:
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
