@@ -3,6 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.model import Package
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
 from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
+from ckanext.sfb_search_extension.libs.publication_search import PublicationSearchHelper
 from ckanext.sfb_search_extension.libs.resource_metadata_search_helper import ResourceMetadataSearchHelper
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
@@ -121,6 +122,15 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             search_results = ResourceMetadataSearchHelper.run(
                 datasets=all_datasets,
                 target_metadata_name=target_metadata,
+                search_filters=search_filters, 
+                search_phrase=search_phrase, 
+                search_results=search_results
+            )
+            return search_results
+        
+        elif search_mode.lower() == 'publication':
+            search_results = PublicationSearchHelper.run(
+                datasets=all_datasets,                
                 search_filters=search_filters, 
                 search_phrase=search_phrase, 
                 search_results=search_results
