@@ -3,6 +3,7 @@
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from sqlalchemy.sql.expression import false
+import re
 if CommonHelper.check_plugin_enabled("dataset_reference"):
     from ckanext.dataset_reference.models.package_reference_link import PackageReferenceLink
 
@@ -60,8 +61,8 @@ class PublicationSearchHelper():
 
             for pub in linked_publications:
                 if not pub.citation:
-                    continue                
-                if search_phrase.lower() in pub.citation:
+                    continue            
+                if re.search(search_phrase, pub.citation, re.IGNORECASE):
                     if not detected:
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
