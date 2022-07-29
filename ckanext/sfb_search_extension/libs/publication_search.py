@@ -61,8 +61,8 @@ class PublicationSearchHelper():
 
             for pub in linked_publications:
                 if not pub.citation:
-                    continue            
-                if re.search(search_phrase, pub.citation, re.IGNORECASE):
+                    continue                
+                elif re.search(search_phrase, pub.citation, re.IGNORECASE):                    
                     if not detected:
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
@@ -70,6 +70,18 @@ class PublicationSearchHelper():
                         search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'groups')
                         search_results = CommonHelper.add_search_result(dataset, search_filters, search_results)
                     detected = True 
+                else:
+                    tokens = search_phrase.split(' ')
+                    for tok in tokens:
+                        if tok.lower() in pub.citation.lower():
+                            if not detected:
+                                search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'sfb_dataset_type')
+                                search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'organization')
+                                search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'tags')
+                                search_results['search_facets'] = CommonHelper.update_search_facet(search_results['search_facets'], dataset, 'groups')
+                                search_results = CommonHelper.add_search_result(dataset, search_filters, search_results)
+                            detected = True 
+                            break
         
         return search_results
 
