@@ -34,6 +34,10 @@ To install ckanext-sfb-search-extension:
 3. Add `sfb_search` and `auto_tag` to the `ckan.plugins` setting in your CKAN config file (by default the config file is located at
     `/etc/ckan/default/ckan.ini`).
 
+4. Run migration:
+
+        ckan db upgrade -p sfb_search
+
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
         sudo service nginx reload
