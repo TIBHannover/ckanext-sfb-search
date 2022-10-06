@@ -1,7 +1,13 @@
  # ckanext-sfb-search-extension
 
-Extending ckan search to search inside the csv/xlsx data resources in ckan. Besides, it creates tags for a dataset automatically based 
-on the csv/xlsx columns' titles. 
+Extending ckan search to:
+
+- Search for dataset based on the column names in csv/xlsx data resources.
+
+- Search for dataset based on linked publications (look at: https://github.com/TIBHannover/ckanext-Dataset-Reference)
+
+- Autotag a dataset on creation.
+
 
 
 ## Requirements
