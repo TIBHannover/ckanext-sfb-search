@@ -105,19 +105,8 @@ class PublicationSearchHelper():
         corpus = [query, doc]
         vectorModel = TfidfVectorizer(min_df=1)
         tfidf = vectorModel.fit_transform(corpus)
-        similarities = tfidf * tfidf.T
-        print("##################################################################")
-        print("##################################################################")
-        print("##################################################################")
-        print("############################################vv######################")
-        print("######################")
-        print("######################")
-        print("######################")
-        print("######################")
-        print(similarities.toarray())
+        similarities = tfidf * tfidf.T       
         return float(similarities.toarray()[0][1])
-
     
-
 
     

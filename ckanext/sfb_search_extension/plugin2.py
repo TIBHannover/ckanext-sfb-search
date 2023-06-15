@@ -43,115 +43,122 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     # IPackageController
 
     def after_search(self, search_results, search_params):
-        search_mode = ''
-        target_metadata = ""
-        search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method', 'publication']
-        if search_params['q'].split(':')[0].lower() not in search_types:
-            return search_results
-        
-        elif len(search_params['q'].lower().split('column:')) > 1:            
-            search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
-            search_mode = 'column'
-        
-        elif len(search_params['q'].lower().split('publication:')) > 1:            
-            search_phrase = search_params['q'].lower().split('publication:')[1].strip().lower()
-            search_mode = 'publication'
-        
-        elif len(search_params['q'].lower().split('sample:')) > 1:
-            search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
-            search_mode = 'sample'
-        
-        elif len(search_params['q'].lower().split('material_combination:')) > 1:
-            search_phrase = search_params['q'].lower().split('material_combination:')[1].strip().lower()
-            target_metadata = 'material_combination'
-            search_mode = "resource_metadata"
-        
-        elif len(search_params['q'].lower().split('surface_preparation:')) > 1:
-            search_phrase = search_params['q'].lower().split('surface_preparation:')[1].strip().lower()
-            target_metadata = 'surface_preparation'
-            search_mode = "resource_metadata"
-        
-        elif len(search_params['q'].lower().split('atmosphere:')) > 1:
-            search_phrase = search_params['q'].lower().split('atmosphere:')[1].strip().lower()
-            target_metadata = 'atmosphere'
-            search_mode = "resource_metadata"
-        
-        elif len(search_params['q'].lower().split('data_type:')) > 1:
-            search_phrase = search_params['q'].lower().split('data_type:')[1].strip().lower()
-            target_metadata = 'data_type'
-            search_mode = "resource_metadata"
-        
-        elif len(search_params['q'].lower().split('analysis_method:')) > 1:
-            search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
-            target_metadata = 'analysis_method'
-            search_mode = "resource_metadata"
-
-        else:            
-            return search_results
-
-        # empty the search result to remove unrelated search result by ckan.
-        search_results['results'] = []
-        search_results['search_facets']['organization']['items'] = []
-        search_results['search_facets']['tags']['items'] = []
-        search_results['search_facets']['groups']['items'] = []
-        if(search_results['search_facets'].get('sfb_dataset_type')):
-            search_results['search_facets']['sfb_dataset_type']['items'] = []
-        search_results['count'] = 0
-        search_results['detected_resources_ids'] = []
-        search_filters = search_params['fq'][0]
-        all_datasets = Package.search_by_name('')
-
-        if search_mode.lower() == 'column':            
-            search_results = ColumnSearchHelper.run(
-                search_filters=search_filters, 
-                search_phrase=search_phrase, 
-                search_results=search_results
-                )
+        try:        
+            search_mode = ''
+            target_metadata = ""
+            search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method', 'publication']
+            if search_params['q'].split(':')[0].lower() not in search_types:
+                return search_results
             
-            return search_results
-        
-        elif search_mode.lower() == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):            
-            search_results = SampleSearchHelper.run(datasets=all_datasets, 
-                search_filters=search_filters, 
-                search_phrase=search_phrase, 
-                search_results=search_results
+            elif len(search_params['q'].lower().split('column:')) > 1:            
+                search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
+                search_mode = 'column'
+            
+            elif len(search_params['q'].lower().split('publication:')) > 1:            
+                search_phrase = search_params['q'].lower().split('publication:')[1].strip().lower()
+                search_mode = 'publication'
+            
+            elif len(search_params['q'].lower().split('sample:')) > 1:
+                search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
+                search_mode = 'sample'
+            
+            elif len(search_params['q'].lower().split('material_combination:')) > 1:
+                search_phrase = search_params['q'].lower().split('material_combination:')[1].strip().lower()
+                target_metadata = 'material_combination'
+                search_mode = "resource_metadata"
+            
+            elif len(search_params['q'].lower().split('surface_preparation:')) > 1:
+                search_phrase = search_params['q'].lower().split('surface_preparation:')[1].strip().lower()
+                target_metadata = 'surface_preparation'
+                search_mode = "resource_metadata"
+            
+            elif len(search_params['q'].lower().split('atmosphere:')) > 1:
+                search_phrase = search_params['q'].lower().split('atmosphere:')[1].strip().lower()
+                target_metadata = 'atmosphere'
+                search_mode = "resource_metadata"
+            
+            elif len(search_params['q'].lower().split('data_type:')) > 1:
+                search_phrase = search_params['q'].lower().split('data_type:')[1].strip().lower()
+                target_metadata = 'data_type'
+                search_mode = "resource_metadata"
+            
+            elif len(search_params['q'].lower().split('analysis_method:')) > 1:
+                search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
+                target_metadata = 'analysis_method'
+                search_mode = "resource_metadata"
+
+            else:            
+                return search_results
+
+            # empty the search result to remove unrelated search result by ckan.
+            search_results['results'] = []
+            search_results['search_facets']['organization']['items'] = []
+            search_results['search_facets']['tags']['items'] = []
+            search_results['search_facets']['groups']['items'] = []
+            if(search_results['search_facets'].get('sfb_dataset_type')):
+                search_results['search_facets']['sfb_dataset_type']['items'] = []
+            search_results['count'] = 0
+            search_results['detected_resources_ids'] = []
+            search_filters = search_params['fq'][0]
+            all_datasets = Package.search_by_name('')
+
+            if search_mode.lower() == 'column':            
+                search_results = ColumnSearchHelper.run(
+                    search_filters=search_filters, 
+                    search_phrase=search_phrase, 
+                    search_results=search_results
+                    )
+                
+                return search_results
+            
+            elif search_mode.lower() == 'sample' and CommonHelper.check_plugin_enabled("sample_link"):            
+                search_results = SampleSearchHelper.run(datasets=all_datasets, 
+                    search_filters=search_filters, 
+                    search_phrase=search_phrase, 
+                    search_results=search_results
+                    )
+                return search_results
+            
+            elif search_mode.lower() == 'resource_metadata':
+                search_results = ResourceMetadataSearchHelper.run(
+                    datasets=all_datasets,
+                    target_metadata_name=target_metadata,
+                    search_filters=search_filters, 
+                    search_phrase=search_phrase, 
+                    search_results=search_results
                 )
-            return search_results
-        
-        elif search_mode.lower() == 'resource_metadata':
-            search_results = ResourceMetadataSearchHelper.run(
-                datasets=all_datasets,
-                target_metadata_name=target_metadata,
-                search_filters=search_filters, 
-                search_phrase=search_phrase, 
-                search_results=search_results
-            )
-            return search_results
-        
-        elif search_mode.lower() == 'publication':
-            search_results = PublicationSearchHelper.run(
-                datasets=all_datasets,                
-                search_filters=search_filters, 
-                search_phrase=search_phrase, 
-                search_results=search_results
-            )
-            return search_results
-        
-        else:
+                return search_results
+            
+            elif search_mode.lower() == 'publication':
+                search_results = PublicationSearchHelper.run(
+                    datasets=all_datasets,                
+                    search_filters=search_filters, 
+                    search_phrase=search_phrase, 
+                    search_results=search_results
+                )
+                return search_results
+            
+            else:
+                return search_results
+        except:
             return search_results
 
 
 
     def after_delete(self, context, pkg_dict):
-        dataset = toolkit.get_action('package_show')({}, {'name_or_id': pkg_dict['id']})
-        for resource in dataset['resources']:
-            column_indexer = DataResourceColumnIndex()
-            records = column_indexer.get_by_resource(id=resource['id'])
-            for rec in records:
-                rec.delete()
-                rec.commit()
+        try:
+            dataset = toolkit.get_action('package_show')({}, {'name_or_id': pkg_dict['id']})
+            for resource in dataset['resources']:
+                column_indexer = DataResourceColumnIndex()
+                records = column_indexer.get_by_resource(id=resource['id'])
+                for rec in records:
+                    rec.delete()
+                    rec.commit()
 
-        return pkg_dict
+            return pkg_dict
+        except:
+            return pkg_dict
+        
 
     def read(self, entity):
         return entity
@@ -188,41 +195,49 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
      # IResourceController
 
     def after_create(self, context, resource):
-        if "url_type" not in resource.keys():
-            return resource
+        try:
+            if "url_type" not in resource.keys():
+                return resource
 
-        if resource['url_type'] == 'upload':
-            if CommonHelper.is_csv(resource):
-                dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
-                columns_names = ""
-                for col in dataframe_columns:
-                    columns_names += (col + ",")
-                column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                column_indexer.save()
-            
-            elif CommonHelper.is_xlsx(resource):
-                xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
-                columns_names = ""
-                for sheet, columns_object in xls_dataframes_columns.items():
-                    for col in columns_object[0]:  
+            if resource['url_type'] == 'upload':
+                if CommonHelper.is_csv(resource):
+                    dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+                    columns_names = ""
+                    for col in dataframe_columns:
                         columns_names += (col + ",")
+                    column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
+                    column_indexer.save()
                 
-                column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                column_indexer.save()
-  
-        return resource
+                elif CommonHelper.is_xlsx(resource):
+                    xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
+                    columns_names = ""
+                    for sheet, columns_object in xls_dataframes_columns.items():
+                        for col in columns_object[0]:  
+                            columns_names += (col + ",")
+                    
+                    column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
+                    column_indexer.save()
+    
+            return resource
+        
+        except:
+            return resource
 
 
 
     def before_delete(self, context, resource, resources):
-        if not CommonHelper.is_csv(resource) and not CommonHelper.is_xlsx(resource):
-            return resource
-        column_indexer = DataResourceColumnIndex()
-        records = column_indexer.get_by_resource(id=resource['id'])
-        for rec in records:
-            rec.delete()
-            rec.commit()
-        return resources    
+        try:
+            if not CommonHelper.is_csv(resource) and not CommonHelper.is_xlsx(resource):
+                return resource
+            column_indexer = DataResourceColumnIndex()
+            records = column_indexer.get_by_resource(id=resource['id'])
+            for rec in records:
+                rec.delete()
+                rec.commit()
+            return resources    
+        except:
+            return resources
+        
 
     
     def after_delete(self, context, resources):        
