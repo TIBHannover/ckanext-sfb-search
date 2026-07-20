@@ -1,6 +1,11 @@
+import logging
+
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
+
+
+log = logging.getLogger(__name__)
 
 
 class AutoTagPlugin(plugins.SingletonPlugin):
@@ -16,67 +21,63 @@ class AutoTagPlugin(plugins.SingletonPlugin):
         
 
 
-     # IResourceController
+    # IResourceController
 
-    def after_create(self, context, resource):
-        dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
-        if resource['url_type'] == 'upload':
-            try:
-                dataframe_columns = []
-                xls_dataframes_columns = {}                
-                if CommonHelper.is_csv(resource):
-                    dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
-                    if not fit_for_autotag:
-                        return resource                    
-                    for col in dataframe_columns:
-                        if 'tags' in dataset.keys() and col.title() not in dataset['tags']:
-                            tag_dict = {'name': col.title()}
-                            dataset['tags'].append(tag_dict)
-                    
-                    toolkit.get_action('package_update')({}, dataset)
-                    return resource
-                    
-                elif CommonHelper.is_xlsx(resource):
-                    xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
-                    for sheet, columns_object in xls_dataframes_columns.items():
-                        if not columns_object[1]:
-                            # not fit for autotag
-                            continue
-                        for col in columns_object[0]:                            
-                            if 'tags' in dataset.keys() and col.title() not in dataset['tags']:
-                                tag_dict = {'name': col.title()}
-                                dataset['tags'].append(tag_dict)
-
-                    toolkit.get_action('package_update')({}, dataset)
-                    return resource
-                        
-                else:
-                    return resource
-            
-            except:
-                return resource
-                # raise
-  
+    def after_resource_create(self, context, resource):
+        self._auto_tag_resource(resource)
         return resource
 
+    def _auto_tag_resource(self, resource):
+        if resource.get('url_type') != 'upload':
+            return
+
+        try:
+            dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+            columns = []
+            if CommonHelper.is_csv(resource):
+                columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+                if not fit_for_autotag:
+                    return
+            elif CommonHelper.is_xlsx(resource):
+                for _sheet, columns_object in CommonHelper.get_xlsx_columns(resource['id']).items():
+                    if columns_object[1]:
+                        columns.extend(columns_object[0])
+            else:
+                return
+
+            if not columns:
+                return
+
+            existing_tags = {tag.get('name') for tag in dataset.get('tags', [])}
+            for col in columns:
+                tag_name = str(col).title()
+                if tag_name not in existing_tags:
+                    dataset.setdefault('tags', []).append({'name': tag_name})
+                    existing_tags.add(tag_name)
+
+            toolkit.get_action('package_update')({}, dataset)
+        except (toolkit.ObjectNotFound, toolkit.ValidationError, toolkit.NotAuthorized, KeyError, TypeError) as exc:
+            log.warning("Could not auto-tag resource %s: %s", resource.get('id'), exc)
+        except Exception as exc:
+            log.exception("Unexpected auto-tag failure for resource %s", resource.get('id'))
 
     
-    def before_create(self, context, resource):
+    def before_resource_create(self, context, resource):
         return resource
 
-    def before_update(self, context, current, resource):
+    def before_resource_update(self, context, current, resource):
         return resource
     
-    def after_update(self, context, resource):
+    def after_resource_update(self, context, resource):
         return resource
     
-    def before_delete(self, context, resource, resources):
+    def before_resource_delete(self, context, resource, resources):
         return resources
     
-    def after_delete(self, context, resources):
+    def after_resource_delete(self, context, resources):
         return resources
     
-    def before_show(self, resource_dict):
+    def before_resource_show(self, resource_dict):
         return resource_dict
 
 

@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import logging
+
 import ckan.plugins.toolkit as toolkit
 import clevercsv
 import pandas as pd
@@ -9,10 +11,14 @@ import ckan.logic as logic
 from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
 
 
-RESOURCE_DIR = toolkit.config['ckan.storage_path'] + '/resources/'
+log = logging.getLogger(__name__)
 STANDARD_HEADERS = ['X-Kategorie', 'Y-Kategorie', 'Datentyp', 'Werkstoff-1', 'Werkstoff-2', 'Atmosphaere', 'Vorbehandlung']
 
 class CommonHelper():
+
+    @staticmethod
+    def resource_dir():
+        return toolkit.config.get('ckan.storage_path', '') + '/resources/'
 
     @staticmethod
     def indexer():
@@ -31,7 +37,7 @@ class CommonHelper():
         records = indexTableModel.get_all()
         for rec in records:
             rec.delete()
-            rec.commit()
+        model.Session.commit()
 
 
         all_datasets = Package.search_by_name('')
@@ -41,7 +47,7 @@ class CommonHelper():
             
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             for resource in dataset['resources']:
-                 if resource['url_type'] == 'upload' and resource['state'] == "active":
+                 if resource.get('url_type') == 'upload' and resource['state'] == "active":
                     if CommonHelper.is_csv(resource):
                         dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
                         columns_names = ""
@@ -82,7 +88,7 @@ class CommonHelper():
         records = check_existence_indexer.get_by_resource(id=resource_id)
         for rec in records:
             rec.delete()
-            rec.commit()
+        model.Session.commit()
         
         column_indexer = DataResourceColumnIndex(resource_id=resource_id, columns_names=index_value)
         column_indexer.save()
@@ -420,7 +426,7 @@ class CommonHelper():
                 - a list of columns names
         '''
 
-        file_path = RESOURCE_DIR + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
+        file_path = CommonHelper.resource_dir() + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
         try:
             df = clevercsv.read_dataframe(file_path)
             df = df.fillna(0)        
@@ -429,7 +435,8 @@ class CommonHelper():
             else:
                 # skip the first row to get the actual columns names
                 return [list(df.iloc[0]), True]
-        except:
+        except Exception as exc:
+            log.warning("Could not read CSV columns for resource %s: %s", resource_id, exc)
             return[[], False]
     
 
@@ -476,10 +483,11 @@ class CommonHelper():
         '''
 
         result_df = {}
-        file_path = RESOURCE_DIR + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
+        file_path = CommonHelper.resource_dir() + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
         try:
             data_sheets = pd.read_excel(file_path, sheet_name=None, header=None)
-        except:
+        except Exception as exc:
+            log.warning("Could not read XLSX columns for resource %s: %s", resource_id, exc)
             return {}
 
         for sheet, data_f in data_sheets.items():
@@ -497,7 +505,7 @@ class CommonHelper():
 
 
     def check_plugin_enabled(plugin_name):
-        plugins = toolkit.config.get("ckan.plugins")
+        plugins = toolkit.config.get("ckan.plugins", "")
         if plugin_name in plugins:
             return True
         return False

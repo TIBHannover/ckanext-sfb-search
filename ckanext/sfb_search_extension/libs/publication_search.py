@@ -1,13 +1,12 @@
 # encoding: utf-8
 
-from this import d
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
-from sqlalchemy.sql.expression import false
-import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 if CommonHelper.check_plugin_enabled("dataset_reference"):
     from ckanext.dataset_reference.models.package_reference_link import PackageReferenceLink
+else:
+    PackageReferenceLink = None
 
 
 
@@ -27,6 +26,9 @@ class PublicationSearchHelper():
             Return:
                 - search_results dictionary
         '''
+
+        if PackageReferenceLink is None:
+            return search_results
 
         pub_model = PackageReferenceLink({})
         for package in datasets:
@@ -58,7 +60,7 @@ class PublicationSearchHelper():
             dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
             detected = False            
             linked_publications = pub_model.get_by_package(name=dataset['name'])
-            if linked_publications == false:
+            if not linked_publications:
                 continue
 
             for pub in linked_publications:                

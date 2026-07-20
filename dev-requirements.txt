@@ -1,1 +1,3 @@
-pytest-ckan
+pytest==7.1.3
+pytest-cov==3.0.0
+pytest-factoryboy==2.4.0

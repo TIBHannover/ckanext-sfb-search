@@ -1,3 +1,5 @@
+import logging
+
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.model import Package
@@ -9,6 +11,8 @@ from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from ckanext.sfb_search_extension.models.data_resource_column_index import DataResourceColumnIndex
 from flask import Blueprint
 
+
+log = logging.getLogger(__name__)
 
 
 class SfbSearchPlugin(plugins.SingletonPlugin):
@@ -42,48 +46,49 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
 
     # IPackageController
 
-    def after_search(self, search_results, search_params):
+    def after_dataset_search(self, search_results, search_params):
         try:        
             search_mode = ''
             target_metadata = ""
             search_types = ['column', 'sample', 'material_combination', 'surface_preparation', 'atmosphere', 'data_type', 'analysis_method', 'publication']
-            if search_params['q'].split(':')[0].lower() not in search_types:
+            query = search_params.get('q') or ''
+            if query.split(':')[0].lower() not in search_types:
                 return search_results
             
-            elif len(search_params['q'].lower().split('column:')) > 1:            
-                search_phrase = search_params['q'].lower().split('column:')[1].strip().lower()
+            elif len(query.lower().split('column:')) > 1:            
+                search_phrase = query.lower().split('column:')[1].strip().lower()
                 search_mode = 'column'
             
-            elif len(search_params['q'].lower().split('publication:')) > 1:            
-                search_phrase = search_params['q'].lower().split('publication:')[1].strip().lower()
+            elif len(query.lower().split('publication:')) > 1:            
+                search_phrase = query.lower().split('publication:')[1].strip().lower()
                 search_mode = 'publication'
             
-            elif len(search_params['q'].lower().split('sample:')) > 1:
-                search_phrase = search_params['q'].lower().split('sample:')[1].strip().lower()
+            elif len(query.lower().split('sample:')) > 1:
+                search_phrase = query.lower().split('sample:')[1].strip().lower()
                 search_mode = 'sample'
             
-            elif len(search_params['q'].lower().split('material_combination:')) > 1:
-                search_phrase = search_params['q'].lower().split('material_combination:')[1].strip().lower()
+            elif len(query.lower().split('material_combination:')) > 1:
+                search_phrase = query.lower().split('material_combination:')[1].strip().lower()
                 target_metadata = 'material_combination'
                 search_mode = "resource_metadata"
             
-            elif len(search_params['q'].lower().split('surface_preparation:')) > 1:
-                search_phrase = search_params['q'].lower().split('surface_preparation:')[1].strip().lower()
+            elif len(query.lower().split('surface_preparation:')) > 1:
+                search_phrase = query.lower().split('surface_preparation:')[1].strip().lower()
                 target_metadata = 'surface_preparation'
                 search_mode = "resource_metadata"
             
-            elif len(search_params['q'].lower().split('atmosphere:')) > 1:
-                search_phrase = search_params['q'].lower().split('atmosphere:')[1].strip().lower()
+            elif len(query.lower().split('atmosphere:')) > 1:
+                search_phrase = query.lower().split('atmosphere:')[1].strip().lower()
                 target_metadata = 'atmosphere'
                 search_mode = "resource_metadata"
             
-            elif len(search_params['q'].lower().split('data_type:')) > 1:
-                search_phrase = search_params['q'].lower().split('data_type:')[1].strip().lower()
+            elif len(query.lower().split('data_type:')) > 1:
+                search_phrase = query.lower().split('data_type:')[1].strip().lower()
                 target_metadata = 'data_type'
                 search_mode = "resource_metadata"
             
-            elif len(search_params['q'].lower().split('analysis_method:')) > 1:
-                search_phrase = search_params['q'].lower().split('analysis_method:')[1].strip().lower()
+            elif len(query.lower().split('analysis_method:')) > 1:
+                search_phrase = query.lower().split('analysis_method:')[1].strip().lower()
                 target_metadata = 'analysis_method'
                 search_mode = "resource_metadata"
 
@@ -99,7 +104,8 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
                 search_results['search_facets']['sfb_dataset_type']['items'] = []
             search_results['count'] = 0
             search_results['detected_resources_ids'] = []
-            search_filters = search_params['fq'][0]
+            fq = search_params.get('fq', '')
+            search_filters = fq[0] if isinstance(fq, (list, tuple)) else fq
             all_datasets = Package.search_by_name('')
 
             if search_mode.lower() == 'column':            
@@ -140,23 +146,29 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             
             else:
                 return search_results
-        except:
+        except (KeyError, TypeError, AttributeError) as exc:
+            log.warning("Could not process SFB search query %r: %s", search_params.get('q'), exc)
+            return search_results
+        except Exception:
+            log.exception("Unexpected SFB search failure for query %r", search_params.get('q'))
             return search_results
 
 
 
-    def after_delete(self, context, pkg_dict):
+    def after_dataset_delete(self, context, pkg_dict):
         try:
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': pkg_dict['id']})
-            for resource in dataset['resources']:
-                column_indexer = DataResourceColumnIndex()
-                records = column_indexer.get_by_resource(id=resource['id'])
-                for rec in records:
-                    rec.delete()
-                    rec.commit()
-
+            resource_ids = [resource['id'] for resource in pkg_dict.get('resources', []) if resource.get('id')]
+            if resource_ids:
+                for resource_id in resource_ids:
+                    DataResourceColumnIndex.delete_by_resource(resource_id)
+            else:
+                DataResourceColumnIndex.delete_by_package(pkg_dict.get('id'))
             return pkg_dict
-        except:
+        except (KeyError, TypeError) as exc:
+            log.warning("Could not remove column indexes for dataset %s: %s", pkg_dict.get('id'), exc)
+            return pkg_dict
+        except Exception:
+            log.exception("Unexpected index cleanup failure for dataset %s", pkg_dict.get('id'))
             return pkg_dict
         
 
@@ -172,85 +184,81 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
     def delete(self, entity):
         return entity
 
-    def after_create(self, context, pkg_dict):
+    def after_dataset_create(self, context, pkg_dict):
         return pkg_dict
 
-    def after_update(self, context, pkg_dict):
+    def after_dataset_update(self, context, pkg_dict):
         return pkg_dict
 
-    def after_show(self, context, pkg_dict):
+    def after_dataset_show(self, context, pkg_dict):
         return pkg_dict
 
-    def before_search(self, search_params):
+    def before_dataset_search(self, search_params):
         return search_params
 
-    def before_index(self, pkg_dict):
+    def before_dataset_index(self, pkg_dict):
         return pkg_dict
 
-    def before_view(self, pkg_dict):
+    def before_dataset_view(self, pkg_dict):
         return pkg_dict
     
 
 
      # IResourceController
 
-    def after_create(self, context, resource):
+    def after_resource_create(self, context, resource):
         try:
-            if "url_type" not in resource.keys():
-                return resource
-
-            if resource['url_type'] == 'upload':
-                if CommonHelper.is_csv(resource):
-                    dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
-                    columns_names = ""
-                    for col in dataframe_columns:
-                        columns_names += (col + ",")
-                    column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                    column_indexer.save()
-                
-                elif CommonHelper.is_xlsx(resource):
-                    xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
-                    columns_names = ""
-                    for sheet, columns_object in xls_dataframes_columns.items():
-                        for col in columns_object[0]:  
-                            columns_names += (col + ",")
-                    
-                    column_indexer = DataResourceColumnIndex(resource_id=resource['id'], columns_names=columns_names)
-                    column_indexer.save()
-    
+            self._index_resource_columns(resource)
             return resource
-        
-        except:
+        except (KeyError, TypeError, AttributeError) as exc:
+            log.warning("Could not index columns for resource %s: %s", resource.get('id'), exc)
+            return resource
+        except Exception:
+            log.exception("Unexpected column indexing failure for resource %s", resource.get('id'))
             return resource
 
+    def _index_resource_columns(self, resource):
+        if resource.get('url_type') != 'upload':
+            return
+
+        columns = []
+        if CommonHelper.is_csv(resource):
+            columns, _fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+        elif CommonHelper.is_xlsx(resource):
+            xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
+            for _sheet, columns_object in xls_dataframes_columns.items():
+                columns.extend(columns_object[0])
+        else:
+            return
+
+        if columns:
+            CommonHelper.add_index(resource['id'], ','.join(str(col) for col in columns) + ',')
 
 
-    def before_delete(self, context, resource, resources):
+    def before_resource_delete(self, context, resource, resources):
         try:
-            if not CommonHelper.is_csv(resource) and not CommonHelper.is_xlsx(resource):
-                return resource
-            column_indexer = DataResourceColumnIndex()
-            records = column_indexer.get_by_resource(id=resource['id'])
-            for rec in records:
-                rec.delete()
-                rec.commit()
+            DataResourceColumnIndex.delete_by_resource(resource.get('id'))
             return resources    
-        except:
+        except (KeyError, TypeError) as exc:
+            log.warning("Could not remove column indexes for resource %s: %s", resource.get('id'), exc)
+            return resources
+        except Exception:
+            log.exception("Unexpected index cleanup failure for resource %s", resource.get('id'))
             return resources
         
 
     
-    def after_delete(self, context, resources):        
+    def after_resource_delete(self, context, resources):        
         return resources
 
-    def before_create(self, context, resource):
+    def before_resource_create(self, context, resource):
         return resource
 
-    def before_update(self, context, current, resource):
+    def before_resource_update(self, context, current, resource):
         return resource
     
-    def after_update(self, context, resource):
+    def after_resource_update(self, context, resource):
         return resource    
     
-    def before_show(self, resource_dict):
+    def before_resource_show(self, resource_dict):
         return resource_dict
