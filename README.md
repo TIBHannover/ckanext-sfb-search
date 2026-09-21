@@ -16,9 +16,10 @@ Extending ckan search to:
 Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
-| --------------- | ------------- |
+|-----------------| ------------- |
 | 2.8 and earlier | not tested    |
 | 2.9             | Yes    |
+| 2.10            | Yes    |
 
 
 
