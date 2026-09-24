@@ -3,8 +3,6 @@
 
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
-if CommonHelper.check_plugin_enabled("sample_link"):
-    from ckanext.semantic_media_wiki.libs.sample_link import SampleLinkHelper
 
 
 class SampleSearchHelper():
@@ -24,6 +22,11 @@ class SampleSearchHelper():
             Return:
                 - search_results dictionary
         '''
+
+        if not CommonHelper.check_plugin_enabled("sample_link"):
+            return search_results
+
+        from ckanext.semantic_media_wiki.libs.sample_link import SampleLinkHelper
 
         for package in datasets:
             if package.state != 'active' or not CommonHelper.check_access_package(package.id):
@@ -70,4 +73,3 @@ class SampleSearchHelper():
         
         toolkit.g.detected_resources_ids = search_results['detected_resources_ids']
         return search_results
-

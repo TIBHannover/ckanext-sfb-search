@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import logging
+import os
 
 import ckan.plugins.toolkit as toolkit
 import clevercsv
@@ -18,7 +19,19 @@ class CommonHelper():
 
     @staticmethod
     def resource_dir():
-        return toolkit.config.get('ckan.storage_path', '') + '/resources/'
+        storage_path = toolkit.config.get('ckan.storage_path')
+        if not storage_path:
+            raise RuntimeError('ckan.storage_path is not configured')
+        return os.path.join(storage_path, 'resources')
+
+    @staticmethod
+    def resource_file_path(resource_id):
+        return os.path.join(
+            CommonHelper.resource_dir(),
+            resource_id[0:3],
+            resource_id[3:6],
+            resource_id[6:],
+        )
 
     @staticmethod
     def indexer():
@@ -33,8 +46,7 @@ class CommonHelper():
             toolkit.abort(404, 'Not found')
 
         # empty the index table
-        indexTableModel = DataResourceColumnIndex()
-        records = indexTableModel.get_all()
+        records = DataResourceColumnIndex.get_all()
         for rec in records:
             rec.delete()
         model.Session.commit()
@@ -49,24 +61,26 @@ class CommonHelper():
             for resource in dataset['resources']:
                  if resource.get('url_type') == 'upload' and resource['state'] == "active":
                     if CommonHelper.is_csv(resource):
-                        dataframe_columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
-                        columns_names = ""
-                        for col in dataframe_columns:
-                            columns_names += (str(col) + ",")
-                        if len(dataframe_columns) != 0:
-                            CommonHelper.add_index(resource['id'], columns_names)  
+                        dataframe_columns, _fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
+                        if dataframe_columns:
+                            CommonHelper.add_index(
+                                resource['id'],
+                                ','.join(str(col) for col in dataframe_columns) + ',',
+                            )
                     
                     elif CommonHelper.is_xlsx(resource):
                         xls_dataframes_columns = CommonHelper.get_xlsx_columns(resource['id'])
                         if len(xls_dataframes_columns) == 0:
                             continue
 
-                        columns_names = ""
-                        for sheet, columns_object in xls_dataframes_columns.items():
-                            for col in columns_object[0]:  
-                                columns_names += (str(col) + ",")
-                                
-                        CommonHelper.add_index(resource['id'], columns_names)                       
+                        columns = []
+                        for _sheet, columns_object in xls_dataframes_columns.items():
+                            columns.extend(columns_object[0])
+                        if columns:
+                            CommonHelper.add_index(
+                                resource['id'],
+                                ','.join(str(col) for col in columns) + ',',
+                            )
         
         return "Indexed"
 
@@ -78,20 +92,17 @@ class CommonHelper():
             Index a data resource columns name in the database.
         '''
         
-        check_existence_indexer = DataResourceColumnIndex()
-        if not check_existence_indexer.get_by_resource(id=resource_id):
+        records = DataResourceColumnIndex.get_by_resource(id=resource_id)
+        if not records:
             column_indexer = DataResourceColumnIndex(resource_id=resource_id, columns_names=index_value)
             column_indexer.save()
             return True
-        
-        # first delete all old records and then add
-        records = check_existence_indexer.get_by_resource(id=resource_id)
-        for rec in records:
-            rec.delete()
+
+        records[0].columns_names = index_value
+        for duplicate in records[1:]:
+            duplicate.delete()
         model.Session.commit()
-        
-        column_indexer = DataResourceColumnIndex(resource_id=resource_id, columns_names=index_value)
-        column_indexer.save()
+        return True
 
 
 
@@ -248,34 +259,6 @@ class CommonHelper():
 
 
     @staticmethod
-    def apply_filters_tags(dataset, search_filters_string):
-        '''
-            Apply tags facet filters for a dataset.
-
-            Args:
-                - dataset: target dataset
-                - search_filters_string: ckan facet filter string. exist in search_params['fq']
-
-            Return:
-                - Boolean
-        '''
-
-        if 'tags:' not in search_filters_string:
-            return True
-        
-        for tag in dataset['tags']:
-            tag_query = 'tags:"' + tag['name'] + '"'
-            if tag_query in search_filters_string:
-                search_filters_string = search_filters_string.replace(tag_query, ' ')
-        
-        if 'tags:' in search_filters_string:
-            return False
-
-        return True 
-    
-
-
-    @staticmethod
     def apply_filters_groups(dataset, search_filters_string):
         '''
             Apply groups facet filters for a dataset.
@@ -398,19 +381,14 @@ class CommonHelper():
                 - Boolean        
         '''
 
-        format = ''
-        name = ''
         if isinstance(resource, dict):
-            format = resource.get('format')
-            name = resource.get('name')
+            resource_format = resource.get('format') or ''
+            name = resource.get('name') or resource.get('url') or ''
         else:
-            format = resource.format
-            name = resource.name
-        
-        if not format:
-            return False
-        
-        return (format in ['CSV']) or ('.csv' in name)
+            resource_format = resource.format or ''
+            name = resource.name or ''
+
+        return resource_format.upper() == 'CSV' or name.lower().endswith('.csv')
     
 
 
@@ -426,7 +404,7 @@ class CommonHelper():
                 - a list of columns names
         '''
 
-        file_path = CommonHelper.resource_dir() + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
+        file_path = CommonHelper.resource_file_path(resource_id)
         try:
             df = clevercsv.read_dataframe(file_path)
             df = df.fillna(0)        
@@ -437,7 +415,7 @@ class CommonHelper():
                 return [list(df.iloc[0]), True]
         except Exception as exc:
             log.warning("Could not read CSV columns for resource %s: %s", resource_id, exc)
-            return[[], False]
+            return [[], False]
     
 
 
@@ -454,19 +432,14 @@ class CommonHelper():
                 - Boolean        
         '''
 
-        format = ''
-        name = ''
         if isinstance(resource, dict):
-            format = resource.get('format')
-            name = resource.get('name')
+            resource_format = resource.get('format') or ''
+            name = resource.get('name') or resource.get('url') or ''
         else:
-            format = resource.format
-            name = resource.name
-        
-        if not format:
-            return False
+            resource_format = resource.format or ''
+            name = resource.name or ''
 
-        return (format in ['XLSX']) or ('.xlsx' in name)
+        return resource_format.upper() == 'XLSX' or name.lower().endswith('.xlsx')
 
 
 
@@ -483,7 +456,7 @@ class CommonHelper():
         '''
 
         result_df = {}
-        file_path = CommonHelper.resource_dir() + resource_id[0:3] + '/' + resource_id[3:6] + '/' + resource_id[6:]
+        file_path = CommonHelper.resource_file_path(resource_id)
         try:
             data_sheets = pd.read_excel(file_path, sheet_name=None, header=None)
         except Exception as exc:
@@ -496,7 +469,9 @@ class CommonHelper():
                 headers = temp_df.iloc[0]
                 final_data_df  = pd.DataFrame(temp_df.values[1:], columns=headers)
                 if not CommonHelper.is_possible_to_automate(final_data_df):
-                    result_df[sheet] = [final_data_df, False]
+                    result_df[sheet] = [list(final_data_df.columns), False]
+                elif final_data_df.empty:
+                    result_df[sheet] = [list(final_data_df.columns), False]
                 else:
                     result_df[sheet] = [list(final_data_df.iloc[0]), True]
 
@@ -504,14 +479,16 @@ class CommonHelper():
 
 
 
+    @staticmethod
     def check_plugin_enabled(plugin_name):
-        plugins = toolkit.config.get("ckan.plugins", "")
-        if plugin_name in plugins:
-            return True
-        return False
+        configured_plugins = toolkit.config.get("ckan.plugins", [])
+        if isinstance(configured_plugins, str):
+            configured_plugins = configured_plugins.split()
+        return plugin_name in configured_plugins
     
 
 
+    @staticmethod
     def check_access_package(package_id):
         context = {'user': toolkit.g.user, 'auth_user_obj': toolkit.g.userobj}
         data_dict = {'id':package_id}

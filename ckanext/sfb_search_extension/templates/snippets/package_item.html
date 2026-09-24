@@ -1,9 +1,10 @@
 {% ckan_extends %}
 
 {% block resources %}
+    {% set detected_resource_ids = g.detected_resources_ids|default([]) %}
     {% for res in package['resources'] %}
         <ul>
-        {% if res['id'] in g.detected_resources_ids %}
+        {% if res['id'] in detected_resource_ids %}
             
             {% set resource_url = h.url_for('dataset_resource.read', resource_id=res['id'], package_type=package['type'], id=package['id'], _external=True) %}
                 {% if res['name'] and res['name'] != ''  %}
