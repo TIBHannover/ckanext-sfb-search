@@ -2,6 +2,7 @@ import logging
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+import ckan.model as model
 from ckan.model import Package
 from ckanext.sfb_search_extension.libs.column_search_helpers import ColumnSearchHelper
 from ckanext.sfb_search_extension.libs.sample_search_helpers import SampleSearchHelper
@@ -95,6 +96,9 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             else:            
                 return search_results
 
+            if not search_phrase:
+                return search_results
+
             # empty the search result to remove unrelated search result by ckan.
             search_results['results'] = []
             search_results['search_facets']['organization']['items'] = []
@@ -165,9 +169,11 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
                 DataResourceColumnIndex.delete_by_package(pkg_dict.get('id'))
             return pkg_dict
         except (KeyError, TypeError) as exc:
+            model.Session.rollback()
             log.warning("Could not remove column indexes for dataset %s: %s", pkg_dict.get('id'), exc)
             return pkg_dict
         except Exception:
+            model.Session.rollback()
             log.exception("Unexpected index cleanup failure for dataset %s", pkg_dict.get('id'))
             return pkg_dict
         
@@ -211,9 +217,11 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             self._index_resource_columns(resource)
             return resource
         except (KeyError, TypeError, AttributeError) as exc:
+            model.Session.rollback()
             log.warning("Could not index columns for resource %s: %s", resource.get('id'), exc)
             return resource
         except Exception:
+            model.Session.rollback()
             log.exception("Unexpected column indexing failure for resource %s", resource.get('id'))
             return resource
 
@@ -240,9 +248,11 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
             DataResourceColumnIndex.delete_by_resource(resource.get('id'))
             return resources    
         except (KeyError, TypeError) as exc:
+            model.Session.rollback()
             log.warning("Could not remove column indexes for resource %s: %s", resource.get('id'), exc)
             return resources
         except Exception:
+            model.Session.rollback()
             log.exception("Unexpected index cleanup failure for resource %s", resource.get('id'))
             return resources
         
@@ -258,6 +268,14 @@ class SfbSearchPlugin(plugins.SingletonPlugin):
         return resource
     
     def after_resource_update(self, context, resource):
+        try:
+            self._index_resource_columns(resource)
+        except (KeyError, TypeError, AttributeError) as exc:
+            model.Session.rollback()
+            log.warning("Could not update the column index for resource %s: %s", resource.get('id'), exc)
+        except Exception:
+            model.Session.rollback()
+            log.exception("Unexpected column reindexing failure for resource %s", resource.get('id'))
         return resource    
     
     def before_resource_show(self, resource_dict):

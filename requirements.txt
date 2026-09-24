@@ -1,3 +1,4 @@
 pandas
 clevercsv
 scikit-learn
+openpyxl

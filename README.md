@@ -1,65 +1,79 @@
- # ckanext-sfb-search-extension
+# ckanext-sfb-search
 
-Extending ckan search to:
+This CKAN extension adds search modes for information that CKAN does not index
+in its standard dataset search. It also derives dataset tags from annotated
+CSV and XLSX uploads.
 
-- Search for dataset based on the column names in csv/xlsx data resources.
+## Compatibility
 
-- Search for dataset based on linked publications (look at: https://github.com/TIBHannover/ckanext-Dataset-Reference)
+| CKAN version | Status |
+| --- | --- |
+| 2.11 | Supported and tested with Python 3.10 |
+| 2.10 | Supported and tested with Python 3.10 |
+| 2.9 and earlier | Not supported |
 
-- Autotag a dataset on creation.
+The package requires Python 3.9 or newer.
 
+## How it works
 
+The package exposes two CKAN plugins:
 
-## Requirements
+- `auto_tag` reads column information from uploaded CSV and XLSX resources.
+  Annotated files use their first data row as tag names; ordinary files use
+  their column headers. Tags are added with CKAN's `package_patch` action.
+- `sfb_search` stores uploaded resource column names in the
+  `data_resource_column_index` table and extends dataset search with prefixed
+  queries. It also highlights resources matched by column or metadata search.
 
+Supported query prefixes are:
 
-Compatibility with core CKAN versions:
+| Query | Searches |
+| --- | --- |
+| `column:temperature` | Indexed CSV/XLSX column names |
+| `sample:sample-name` | Samples supplied by the optional `sample_link` plugin |
+| `publication:author` | Citations supplied by the optional `dataset_reference` plugin |
+| `material_combination:steel` | Resource material metadata |
+| `surface_preparation:polished` | Resource preparation metadata |
+| `atmosphere:argon` | Resource atmosphere metadata |
+| `data_type:mechanical` | Resource data-type metadata |
+| `analysis_method:xrd` | Resource analysis-method metadata |
 
-| CKAN version    | Compatible?   |
-|-----------------| ------------- |
-| 2.8 and earlier | not tested    |
-| 2.9             | Yes    |
-| 2.10            | Yes    |
-
-
+The `/sfb_search/indexer` route rebuilds the column index for existing
+resources. It is restricted to sysadmins.
 
 ## Installation
 
-To install ckanext-sfb-search-extension:
+1. Activate the CKAN virtual environment.
+2. Clone and install the extension and its dependencies:
 
-1. Activate your CKAN virtual environment, for example:
+       git clone https://github.com/TIBHannover/ckanext-sfb-search.git
+       cd ckanext-sfb-search
+       pip install -r requirements.txt
+       pip install -e .
 
-        . /usr/lib/ckan/default/bin/activate
+3. Add both plugins to `ckan.plugins`:
 
-2. Clone the source and install it on the virtualenv
+       ckan.plugins = ... auto_tag sfb_search
 
-        git clone https://git.tib.eu/lab-linked-scientific-knowledge/sfb-inf/ckanext-sfb-search-extension.git
-        cd ckanext-sfb-search-extension
-        pip install -e .
-        pip install -r requirements.txt
+4. Create or upgrade the extension database table:
 
-3. Add `sfb_search` and `auto_tag` to the `ckan.plugins` setting in your CKAN config file (by default the config file is located at
-    `/etc/ckan/default/ckan.ini`).
+       ckan -c /etc/ckan/default/ckan.ini db upgrade -p sfb_search
 
-4. Run migration:
+5. Restart CKAN.
 
-        ckan db upgrade -p sfb_search
-
-4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
-
-        sudo service nginx reload
-
-
-
+Run the migration whenever the extension is upgraded. Existing installations
+can rebuild their resource-column index by requesting `/sfb_search/indexer` as
+a sysadmin.
 
 ## Tests
 
-To run the tests, do:
+Install `dev-requirements.txt`, then run:
 
-    pytest --ckan-ini=test.ini
+    pytest --ckan-ini=test.ini --cov=ckanext.sfb_search_extension ckanext/sfb_search_extension
 
-
+The GitHub Actions matrix and `docker-compose.ci.yml` run the suite against
+CKAN 2.10 and 2.11.
 
 ## License
 
-[AGPL](https://www.gnu.org/licenses/agpl-3.0.en.html)
+[AGPL](LICENSE)

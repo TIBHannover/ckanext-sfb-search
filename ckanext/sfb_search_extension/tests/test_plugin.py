@@ -1,7 +1,17 @@
 import pytest
 
 import ckan.plugins as plugins
+import ckan.plugins.toolkit as toolkit
+from ckan.model import meta
+from ckan.tests import factories, helpers
+import pandas as pd
 
+from ckanext.sfb_search_extension.libs.commons import CommonHelper
+from ckanext.sfb_search_extension.libs.publication_search import PublicationSearchHelper
+from ckanext.sfb_search_extension.models.data_resource_column_index import (
+    DataResourceColumnIndex,
+    data_resource_column_index_table,
+)
 from ckanext.sfb_search_extension.plugin import AutoTagPlugin
 from ckanext.sfb_search_extension.plugin2 import SfbSearchPlugin
 
@@ -30,7 +40,7 @@ def _search_results():
 
 
 @pytest.mark.ckan_config("ckan.plugins", "auto_tag sfb_search")
-def test_declared_plugins_load():
+def test_declared_plugins_load(with_plugins):
     assert plugins.plugin_loaded("auto_tag")
     assert plugins.plugin_loaded("sfb_search")
 
@@ -61,13 +71,14 @@ def test_csv_resource_is_indexed_and_auto_tagged(monkeypatch):
     def fake_get_action(name):
         if name == "package_show":
             return lambda context, data: dataset
-        if name == "package_update":
+        if name == "package_patch":
             return lambda context, data: updated.update(data)
         raise AssertionError(name)
 
     monkeypatch.setattr("ckanext.sfb_search_extension.plugin.toolkit.get_action", fake_get_action)
 
     assert AutoTagPlugin().after_resource_create({}, resource) == resource
+    assert updated["id"] == dataset["id"]
     assert {"name": "Temperature"} in updated["tags"]
     assert {"name": "Pressure"} in updated["tags"]
 
@@ -96,7 +107,7 @@ def test_xlsx_resource_path_is_indexed_and_auto_tagged(monkeypatch):
     def fake_get_action(name):
         if name == "package_show":
             return lambda context, data: dataset
-        if name == "package_update":
+        if name == "package_patch":
             return lambda context, data: updated.update(data)
         raise AssertionError(name)
 
@@ -203,6 +214,17 @@ def test_normal_search_results_are_unchanged():
     assert SfbSearchPlugin().after_dataset_search(results, {"q": "normal search", "fq": [""]}) is results
 
 
+def test_empty_prefixed_search_is_unchanged():
+    results = _search_results()
+
+    assert SfbSearchPlugin().after_dataset_search(results, {"q": "column:  ", "fq": [""]}) is results
+
+
+@pytest.mark.parametrize(("query", "document"), [("", "citation"), ("the", "and")])
+def test_publication_similarity_handles_empty_vocabulary(query, document):
+    assert PublicationSearchHelper.similarity_calc(query, document) == 0.0
+
+
 @pytest.mark.ckan_config("ckan.plugins", "auto_tag sfb_search")
 def test_indexer_blueprint_route_is_registered_and_responds(app):
     flask_app = getattr(app, "flask_app", None) or getattr(app, "app", None)
@@ -221,3 +243,106 @@ def test_dataset_and_resource_callbacks_do_not_collide():
     assert "after_resource_create" in methods
     assert "after_delete" not in methods
     assert "after_create" not in methods
+
+
+@pytest.mark.parametrize(
+    ("resource", "is_csv", "is_xlsx"),
+    [
+        ({"format": "csv", "name": None, "url": "upload"}, True, False),
+        ({"format": "", "name": "DATA.CSV"}, True, False),
+        ({"format": None, "name": None, "url": "report.XLSX"}, False, True),
+        ({"format": "txt", "name": "notes.txt"}, False, False),
+    ],
+)
+def test_resource_format_detection_is_case_insensitive_and_null_safe(resource, is_csv, is_xlsx):
+    assert CommonHelper.is_csv(resource) is is_csv
+    assert CommonHelper.is_xlsx(resource) is is_xlsx
+
+
+def test_annotated_xlsx_columns_are_read_from_uploaded_file(tmp_path, monkeypatch):
+    resource_id = "abcdef123456"
+    monkeypatch.setitem(toolkit.config, "ckan.storage_path", str(tmp_path))
+    resource_path = tmp_path / "resources" / "abc" / "def" / "123456"
+    resource_path.parent.mkdir(parents=True)
+    dataframe = pd.DataFrame(
+        [
+            ["X-Kategorie", "Y-Kategorie", "Datentyp", "Werkstoff-1", "Werkstoff-2", "Atmosphaere", "Vorbehandlung"],
+            ["Temperature", "Pressure", "Mechanical", "Steel", "Aluminum", "Air", "Polished"],
+        ]
+    )
+    dataframe.to_excel(resource_path, index=False, header=False)
+
+    sheets = CommonHelper.get_xlsx_columns(resource_id)
+
+    assert sheets["Sheet1"] == [
+        ["Temperature", "Pressure", "Mechanical", "Steel", "Aluminum", "Air", "Polished"],
+        True,
+    ]
+
+
+@pytest.mark.parametrize(
+    ("configured_plugins", "expected"),
+    [
+        ("auto_tag sample_link sfb_search", True),
+        (["auto_tag", "sample_link", "sfb_search"], True),
+        ("auto_tag sample_link_extra sfb_search", False),
+    ],
+)
+def test_plugin_detection_accepts_string_and_list_config(monkeypatch, configured_plugins, expected):
+    monkeypatch.setitem(toolkit.config, "ckan.plugins", configured_plugins)
+
+    assert CommonHelper.check_plugin_enabled("sample_link") is expected
+
+
+def test_resource_update_refreshes_tags_and_column_index(monkeypatch):
+    resource = _resource()
+    auto_tagged = []
+    indexed = []
+    auto_tag_plugin = AutoTagPlugin()
+    search_plugin = SfbSearchPlugin()
+
+    monkeypatch.setattr(auto_tag_plugin, "_auto_tag_resource", lambda context, value: auto_tagged.append(value["id"]))
+    monkeypatch.setattr(search_plugin, "_index_resource_columns", lambda value: indexed.append(value["id"]))
+
+    assert auto_tag_plugin.after_resource_update({}, resource) is resource
+    assert search_plugin.after_resource_update({}, resource) is resource
+    assert auto_tagged == [resource["id"]]
+    assert indexed == [resource["id"]]
+
+
+@pytest.mark.ckan_config("ckan.plugins", "auto_tag sfb_search")
+@pytest.mark.ckan_config("ckan.uploads_enabled", True)
+def test_uploaded_annotated_csv_is_tagged_and_indexed(clean_db, create_with_upload, with_plugins):
+    data_resource_column_index_table.create(bind=meta.engine, checkfirst=True)
+    dataset = factories.Dataset()
+    csv_content = (
+        "X-Kategorie,Y-Kategorie,Datentyp,Werkstoff-1,Werkstoff-2,Atmosphaere,Vorbehandlung\n"
+        "Temperature,Pressure,Mechanical,Steel,Aluminum,Air,Polished\n"
+    )
+
+    resource = create_with_upload(
+        csv_content,
+        "annotated.csv",
+        context={"ignore_auth": True},
+        package_id=dataset["id"],
+        url="upload",
+        name="annotated.csv",
+        format="CSV",
+    )
+
+    shown_dataset = helpers.call_action("package_show", id=dataset["id"])
+    tag_names = {tag["name"] for tag in shown_dataset["tags"]}
+    indexes = DataResourceColumnIndex.get_by_resource(resource["id"])
+
+    assert {"Temperature", "Pressure", "Mechanical", "Steel", "Aluminum", "Air", "Polished"} <= tag_names
+    assert len(indexes) == 1
+    assert indexes[0].columns_names == "Temperature,Pressure,Mechanical,Steel,Aluminum,Air,Polished,"
+
+
+@pytest.mark.ckan_config("ckan.plugins", "auto_tag sfb_search")
+def test_normal_dataset_search_page_renders_without_detected_resources(clean_db, app, with_plugins):
+    factories.Dataset(resources=[{"url": "https://example.com/data.csv", "format": "CSV"}])
+
+    response = app.get("/dataset?q=ordinary")
+
+    assert response.status_code == 200

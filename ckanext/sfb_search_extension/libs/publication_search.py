@@ -3,10 +3,6 @@
 import ckan.plugins.toolkit as toolkit
 from ckanext.sfb_search_extension.libs.commons import CommonHelper
 from sklearn.feature_extraction.text import TfidfVectorizer
-if CommonHelper.check_plugin_enabled("dataset_reference"):
-    from ckanext.dataset_reference.models.package_reference_link import PackageReferenceLink
-else:
-    PackageReferenceLink = None
 
 
 
@@ -27,8 +23,10 @@ class PublicationSearchHelper():
                 - search_results dictionary
         '''
 
-        if PackageReferenceLink is None:
+        if not CommonHelper.check_plugin_enabled("dataset_reference"):
             return search_results
+
+        from ckanext.dataset_reference.models.package_reference_link import PackageReferenceLink
 
         pub_model = PackageReferenceLink({})
         for package in datasets:
@@ -104,9 +102,15 @@ class PublicationSearchHelper():
                 - The similartiy score
         '''
 
+        if not query or not doc:
+            return 0.0
+
         corpus = [query, doc]
         vectorModel = TfidfVectorizer(min_df=1)
-        tfidf = vectorModel.fit_transform(corpus)
+        try:
+            tfidf = vectorModel.fit_transform(corpus)
+        except ValueError:
+            return 0.0
         similarities = tfidf * tfidf.T       
         return float(similarities.toarray()[0][1])
     

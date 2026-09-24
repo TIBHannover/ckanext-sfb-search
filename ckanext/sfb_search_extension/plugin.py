@@ -24,15 +24,15 @@ class AutoTagPlugin(plugins.SingletonPlugin):
     # IResourceController
 
     def after_resource_create(self, context, resource):
-        self._auto_tag_resource(resource)
+        self._auto_tag_resource(context, resource)
         return resource
 
-    def _auto_tag_resource(self, resource):
+    def _auto_tag_resource(self, context, resource):
         if resource.get('url_type') != 'upload':
             return
 
         try:
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+            dataset = toolkit.get_action('package_show')(context, {'id': resource['package_id']})
             columns = []
             if CommonHelper.is_csv(resource):
                 columns, fit_for_autotag = CommonHelper.get_csv_columns(resource['id'])
@@ -55,7 +55,10 @@ class AutoTagPlugin(plugins.SingletonPlugin):
                     dataset.setdefault('tags', []).append({'name': tag_name})
                     existing_tags.add(tag_name)
 
-            toolkit.get_action('package_update')({}, dataset)
+            toolkit.get_action('package_patch')(
+                context,
+                {'id': dataset['id'], 'tags': dataset['tags']},
+            )
         except (toolkit.ObjectNotFound, toolkit.ValidationError, toolkit.NotAuthorized, KeyError, TypeError) as exc:
             log.warning("Could not auto-tag resource %s: %s", resource.get('id'), exc)
         except Exception as exc:
@@ -69,6 +72,7 @@ class AutoTagPlugin(plugins.SingletonPlugin):
         return resource
     
     def after_resource_update(self, context, resource):
+        self._auto_tag_resource(context, resource)
         return resource
     
     def before_resource_delete(self, context, resource, resources):
