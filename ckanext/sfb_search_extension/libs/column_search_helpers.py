@@ -33,7 +33,7 @@ class ColumnSearchHelper():
                     continue
                 
                 resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
-                dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+                dataset = toolkit.get_action('package_show')({}, {'id': resource['package_id']})
                 
                 # only consider dataset in an organization. If search triggers from an organization page.
                 if 'owner_org' in search_filters:

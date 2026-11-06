@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
@@ -14,6 +15,16 @@ from ckanext.sfb_search_extension.models.data_resource_column_index import (
 )
 from ckanext.sfb_search_extension.plugin import AutoTagPlugin
 from ckanext.sfb_search_extension.plugin2 import SfbSearchPlugin
+
+
+def test_package_show_calls_use_ckan_211_id_argument():
+    package_root = Path(__file__).parents[1]
+    offenders = [
+        str(path.relative_to(package_root))
+        for path in (package_root / "libs").rglob("*.py")
+        if "name_or_id" in path.read_text()
+    ]
+    assert offenders == []
 
 
 def _resource(format="CSV", resource_id="abcdef123456", name="data.csv"):

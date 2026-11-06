@@ -57,7 +57,7 @@ class CommonHelper():
             if package.state != 'active':
                 continue
             
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
+            dataset = toolkit.get_action('package_show')({}, {'id': package.name})
             for resource in dataset['resources']:
                  if resource.get('url_type') == 'upload' and resource['state'] == "active":
                     if CommonHelper.is_csv(resource):
@@ -122,8 +122,8 @@ class CommonHelper():
             return True
 
         try:
-            toolkit.check_access('package_show', context, {'name_or_id': resource['package_id']})
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': resource['package_id']})
+            toolkit.check_access('package_show', context, {'id': resource['package_id']})
+            dataset = toolkit.get_action('package_show')(context, {'id': resource['package_id']})
         except toolkit.NotAuthorized:
             return True
 

@@ -55,7 +55,7 @@ class PublicationSearchHelper():
                 if not is_part_of_group:
                     continue
             
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
+            dataset = toolkit.get_action('package_show')({}, {'id': package.name})
             detected = False            
             linked_publications = pub_model.get_by_package(name=dataset['name'])
             if not linked_publications:

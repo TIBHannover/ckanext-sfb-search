@@ -50,7 +50,7 @@ class ResourceMetadataSearchHelper():
                 if not is_part_of_group:
                     continue
             
-            dataset = toolkit.get_action('package_show')({}, {'name_or_id': package.name})
+            dataset = toolkit.get_action('package_show')({}, {'id': package.name})
             detected = False
 
             for res in dataset['resources']:
